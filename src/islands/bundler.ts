@@ -24,12 +24,12 @@ export async function bundleIslands(
 
   const manifest: IslandManifest = new Map();
 
+  // Build the client runtime first with a fixed, predictable name.
+  await bundleClientRuntime(outDir);
+
   // Build all islands in one pass (Bun handles code splitting automatically)
   const result = await Bun.build({
-    entrypoints: [
-      ...files,
-      join(import.meta.dir, "client-runtime.ts"),
-    ],
+    entrypoints: files,
     outdir: outDir,
     target: "browser",
     splitting: true,
@@ -51,8 +51,6 @@ export async function bundleIslands(
   // Map each source island file to its output bundle
   for (const output of result.outputs) {
     if (output.kind !== "entry-point") continue;
-    // Skip the runtime entry
-    if (output.path.includes("client-runtime")) continue;
 
     // Find which source file this output corresponds to
     const sourcePath = files.find((f) => {
