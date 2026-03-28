@@ -104,13 +104,29 @@ export default function BlogPost({ params }: PageProps) {
 }
 ```
 
-`PageProps` contains:
+`PageProps` is generic. Pass your loader and param types for full type safety:
 
 ```ts
-interface PageProps {
-  params: Record<string, string>; // URL params from dynamic segments
-  url: URL;                        // the full request URL
-  req: Request;                    // the raw Fetch API Request
+type PageProps<
+  TLoader = undefined,   // typeof your loader export
+  TParams = Record<string, string>
+>
+```
+
+Example with typed params and loader data:
+
+```tsx
+type Params = { slug: string };
+
+export const loader = async ({ params }: RouteContext<Params>) => {
+  const post = getPost(params.slug);
+  if (!post) return notFound();
+  return { data: { post } };
+};
+
+export default function Post({ data, params }: PageProps<typeof loader, Params>) {
+  // data.post is typed, params.slug is typed
+  return <h1>{data.post.title}</h1>;
 }
 ```
 
@@ -177,22 +193,70 @@ Rules:
 - `<meta property="...">` deduplicates by `property`.
 - Everything else appends.
 
+## Loaders
+
+A page can export a `loader` function. The loader runs on the server before the page component renders. Use it to fetch data, check auth, redirect, or return a 404.
+
+```ts
+import { notFound, redirect } from "bun-web-framework";
+import type { Loader } from "bun-web-framework";
+
+export const loader: Loader = async ({ params, req }) => {
+  const session = getSession(req);
+  if (!session) return redirect("/login");
+
+  const post = await db.getPost(params.slug);
+  if (!post) return notFound();
+
+  return { data: { post, session } };
+};
+
+export default function Post({ data }: PageProps<typeof loader>) {
+  return <h1>{data.post.title}</h1>;
+}
+```
+
+The return value is either:
+
+- `{ data: T }` — the `data` prop is passed to the page component, typed via `typeof loader`
+- `Response` — returned directly; use `notFound()` or `redirect()` for common cases
+- `{ data: T, status: number, headers: {...} }` — data with custom status/headers
+
+### notFound()
+
+Returns a 404 response. The framework renders your `_404.tsx` page (with layouts) at the 404 status.
+
+```ts
+if (!post) return notFound();
+```
+
+### redirect()
+
+Returns a redirect response.
+
+```ts
+return redirect("/login");          // 302
+return redirect("/new-url", 301);   // permanent
+```
+
+Allowed status codes: `301`, `302`, `307`, `308`.
+
 ## API routes
 
 Files inside `pages/api/` (or any directory) export named functions for each HTTP method.
 
 ```ts
 // pages/api/users.ts
-import type { RouteContext } from "bun-web-framework";
+import type { ApiHandler } from "bun-web-framework";
 
-export async function GET(req: Request, ctx: { params: Record<string, string> }) {
+export const GET: ApiHandler = (_req, { params }) => {
   return Response.json({ users: [] });
-}
+};
 
-export async function POST(req: Request, ctx: { params: Record<string, string> }) {
+export const POST: ApiHandler = async (req, _ctx) => {
   const body = await req.json();
   return Response.json({ created: body }, { status: 201 });
-}
+};
 ```
 
 The route is treated as an API route when the file is inside a directory named `api` or in a path containing `/api/`. Export `GET`, `POST`, `PUT`, `DELETE`, or `PATCH`. You can also export `default` as a fallback for any method.
@@ -203,13 +267,13 @@ By default, every component is server-only: it renders to HTML and sends no Java
 
 ### Defining an island
 
-Name the file `*.island.tsx` and wrap the default export with `island()`.
+Name the file `*.island.tsx` and export a default function. The framework wraps it automatically.
 
 ```tsx
 // components/Counter.island.tsx
-import { island, useState } from "bun-web-framework/islands";
+import { useState } from "bun-web-framework/islands";
 
-function Counter({ initial = 0 }: { initial?: number }) {
+export default function Counter({ initial = 0 }: { initial?: number }) {
   const [count, setCount] = useState(initial);
   return (
     <div>
@@ -219,11 +283,9 @@ function Counter({ initial = 0 }: { initial?: number }) {
     </div>
   );
 }
-
-export default island(Counter, import.meta.path);
 ```
 
-Pass `import.meta.path` as the second argument so the bundler can match the source file to its output bundle.
+No `island()` call needed. A Bun plugin registered by `createServer()` detects the `.island.tsx` extension and handles the wrapping at load time.
 
 ### Using an island
 
@@ -430,13 +492,52 @@ Bundles island components for production. Writes output to `outDir`.
 
 JSX component. Children are collected during rendering and injected into `<head>`.
 
-### `island(component, filePath, exportName?)`
+### `notFound(body?)`
 
-Wraps a component as a client-side island. The second argument must be `import.meta.path`. Returns the same component type so it can be used anywhere.
+Returns a `Response` with status 404. When returned from a loader, the framework renders the `_404.tsx` page.
+
+### `redirect(url, status?)`
+
+Returns a redirect `Response`. Default status is `302`. Allowed: `301`, `302`, `307`, `308`.
 
 ### `useState(initialValue)`
 
 Minimal state hook for island components. On the server returns `[initialValue, noop]`. In the browser manages local state and triggers re-renders.
+
+### Types
+
+```ts
+// Props passed to every page component
+type PageProps<TLoader = undefined, TParams = Record<string, string>> = {
+  params: TParams;
+  url: URL;
+  req: Request;
+  data: // inferred from TLoader
+};
+
+// Props passed to layout components
+interface LayoutProps {
+  params: Record<string, string>;
+  url: URL;
+  req: Request;
+  children: VNode | null;
+}
+
+// Loader function signature
+type Loader<TData = unknown, TParams = Record<string, string>> =
+  (ctx: RouteContext<TParams>) => LoaderReturn<TData> | Promise<LoaderReturn<TData>>;
+
+// Loader return value
+type LoaderReturn<TData = unknown> =
+  | Response
+  | { data: TData; status?: number; headers?: Record<string, string> };
+
+// API route handler
+type ApiHandler = (
+  req: Request,
+  ctx: { params: Record<string, string> },
+) => Response | Promise<Response>;
+```
 
 ## Tests
 
