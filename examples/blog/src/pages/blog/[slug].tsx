@@ -5,10 +5,9 @@ import { getPost, likes, type Post } from "../../data/posts";
 import LikeButton from "../../components/LikeButton.island";
 
 type Params = { slug: string };
+type Data = { post: Post; likeCount: number };
 
-export const loader: Loader<{ post: Post; likeCount: number }, Params> = async ({
-  params,
-}: RouteContext<Params>) => {
+export const loader: Loader<Data, Params> = async ({ params }: RouteContext<Params>) => {
   const post = getPost(params.slug);
   if (!post) return notFound();
   return { data: { post, likeCount: likes[post.slug] ?? 0 } };

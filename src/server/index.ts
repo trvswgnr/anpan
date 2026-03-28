@@ -171,7 +171,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 // API route handler
 // ---------------------------------------------------------------------------
 
-type ApiHandler = (
+export type ApiHandler = (
   req: Request,
   ctx: { params: Record<string, string> },
 ) => Response | Promise<Response>;

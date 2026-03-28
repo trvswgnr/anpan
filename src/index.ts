@@ -3,7 +3,7 @@
 
 // Server
 export { createServer } from "./server/index.ts";
-export type { ServerConfig } from "./server/index.ts";
+export type { ServerConfig, ApiHandler } from "./server/index.ts";
 
 // Dev server
 export { createDevServer } from "./dev/index.ts";

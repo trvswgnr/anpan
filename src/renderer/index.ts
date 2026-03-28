@@ -11,8 +11,9 @@ import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
 // Types
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface PageModule {
-  default: (props: PageProps<unknown>) => VNode | Child | null;
+  default: (props: any) => VNode | Child | null;
   loader?: Loader;
   config?: { streaming?: boolean };
 }
@@ -24,26 +25,32 @@ export interface LayoutModule {
 /**
  * Props passed to every page component.
  *
- * TData — shape of data returned by the page's `loader` export.
- * TParams — shape of route params, inferred from the dynamic segments in the filename.
+ * TLoader — the page's `loader` export (pass `typeof loader` for typed data).
+ * TParams — shape of route params (e.g. `{ slug: string }` for `[slug].tsx`).
  *
  * @example
  * // pages/blog/[slug].tsx
- * export const loader = async ({ params }: RouteContext<{ slug: string }>) => {
+ * type Params = { slug: string };
+ *
+ * export const loader = async ({ params }: RouteContext<Params>) => {
  *   const post = getPost(params.slug);
  *   if (!post) return notFound();
  *   return { data: { post } };
  * };
  *
- * export default function Post({ data, params }: PageProps<typeof loader>) {
- *   return <h1>{data.post.title}</h1>;
+ * export default function Post({ data, params }: PageProps<typeof loader, Params>) {
+ *   return <h1>{data.post.title}</h1>; // data is typed!
  * }
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PageProps<
-  TLoader extends Loader | undefined = undefined,
+  TLoader extends ((...args: any[]) => any) | undefined = undefined,
   TParams extends Record<string, string> = Record<string, string>,
 > = RouteContext<TParams> & {
-  data: TLoader extends Loader<infer D> ? D : undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: TLoader extends (...args: any[]) => Promise<{ data: infer D } | Response> | { data: infer D } | Response
+    ? D
+    : undefined;
 };
 
 export interface LayoutProps extends RouteContext {
@@ -113,6 +120,12 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     }
 
     if (loaderResult instanceof Response) {
+      const status = loaderResult.status;
+      // Redirects — return immediately.
+      if (status >= 300 && status < 400) return loaderResult;
+      // 404 — render the custom _404 page (wrapped in layout) with 404 status.
+      if (status === 404) return renderNotFound(ctx);
+      // Other error responses — return as-is.
       return loaderResult;
     }
 

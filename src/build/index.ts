@@ -14,7 +14,7 @@ export async function build(config: BuildConfig = {}): Promise<void> {
   const islandOutDir = join(outDir, "islands");
 
   console.log("[build] Bundling islands...");
-  const manifest = await bundleIslands(pagesDir, islandOutDir);
+  const { manifest } = await bundleIslands(pagesDir, islandOutDir);
   console.log(`[build] Bundled ${manifest.size} island(s) → ${islandOutDir}`);
 
   // Write manifest JSON for reference
