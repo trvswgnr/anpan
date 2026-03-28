@@ -4,15 +4,16 @@ import { HeadContext, runWithHeadContext } from "./head.ts";
 import { IslandRegistry, runWithIslandRegistry } from "../islands/index.ts";
 import type { IslandManifest } from "../islands/types.ts";
 import { findLayouts } from "../router/index.ts";
-import type { Route, RouteContext, RouteMatch } from "../router/types.ts";
-import { ISLANDS_SERVE_PATH, RUNTIME_BUNDLE } from "../islands/bundler.ts";
+import type { Route, RouteContext, RouteMatch, Loader, LoaderReturn } from "../router/types.ts";
+import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface PageModule {
-  default: (props: PageProps) => VNode | Child | null;
+  default: (props: PageProps<unknown>) => VNode | Child | null;
+  loader?: Loader;
   config?: { streaming?: boolean };
 }
 
@@ -20,7 +21,30 @@ export interface LayoutModule {
   default: (props: LayoutProps) => VNode | Child | null;
 }
 
-export interface PageProps extends RouteContext {}
+/**
+ * Props passed to every page component.
+ *
+ * TData — shape of data returned by the page's `loader` export.
+ * TParams — shape of route params, inferred from the dynamic segments in the filename.
+ *
+ * @example
+ * // pages/blog/[slug].tsx
+ * export const loader = async ({ params }: RouteContext<{ slug: string }>) => {
+ *   const post = getPost(params.slug);
+ *   if (!post) return notFound();
+ *   return { data: { post } };
+ * };
+ *
+ * export default function Post({ data, params }: PageProps<typeof loader>) {
+ *   return <h1>{data.post.title}</h1>;
+ * }
+ */
+export type PageProps<
+  TLoader extends Loader | undefined = undefined,
+  TParams extends Record<string, string> = Record<string, string>,
+> = RouteContext<TParams> & {
+  data: TLoader extends Loader<infer D> ? D : undefined;
+};
 
 export interface LayoutProps extends RouteContext {
   children: VNode | null;
@@ -31,6 +55,8 @@ export interface RenderContext {
   req: Request;
   allRoutes: Route[];
   islandManifest: IslandManifest;
+  /** Serve URL for the hydration runtime, e.g. /_islands/__runtime.js */
+  islandRuntimeUrl: string;
   islandOutDir: string;
   isDev: boolean;
 }
@@ -51,7 +77,7 @@ export const CONTENT_MARKER_TYPE = "__bwfw_content_marker__";
 // ---------------------------------------------------------------------------
 
 export async function renderPage(ctx: RenderContext): Promise<Response> {
-  const { match, req, allRoutes, islandManifest, isDev } = ctx;
+  const { match, req, allRoutes, islandManifest, islandRuntimeUrl, isDev } = ctx;
   const url = new URL(req.url);
   const routeCtx: RouteContext = { params: match.params, url, req };
 
@@ -70,6 +96,31 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     throw new Error(`Page module must export a default function: ${match.route.filePath}`);
   }
 
+  // ---------------------------------------------------------------------------
+  // Run the optional loader. If it returns a Response, short-circuit rendering.
+  // Otherwise pass the data to the page component.
+  // ---------------------------------------------------------------------------
+  let loaderData: unknown = undefined;
+  let responseStatus = 200;
+  let responseHeaders: Record<string, string> = {};
+
+  if (typeof pageMod.loader === "function") {
+    let loaderResult: LoaderReturn;
+    try {
+      loaderResult = await pageMod.loader(routeCtx);
+    } catch (err) {
+      throw new Error(`Loader threw in ${match.route.filePath}\n${err}`);
+    }
+
+    if (loaderResult instanceof Response) {
+      return loaderResult;
+    }
+
+    loaderData = loaderResult.data;
+    if (loaderResult.status !== undefined) responseStatus = loaderResult.status;
+    if (loaderResult.headers) responseHeaders = loaderResult.headers;
+  }
+
   // Pre-load layout modules
   const layouts = findLayouts(allRoutes, match.route);
   const layoutMods: LayoutModule[] = [];
@@ -84,16 +135,18 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   //   • Calls island() wrappers which register into islandReg.
   //   • Result: pageHtml string + all metadata known.
   // ---------------------------------------------------------------------------
+  const pageCtx = { ...routeCtx, data: loaderData };
+
   let pageHtml = "";
   runWithHeadContext(headCtx, () => {
     runWithIslandRegistry(islandReg, () => {
-      pageHtml = renderToString(pageMod.default(routeCtx));
+      pageHtml = renderToString(pageMod.default(pageCtx));
     });
   });
 
   const headInjection = buildHeadInjection(
     headCtx.serialize(),
-    buildIslandScripts(islandReg, isDev),
+    buildIslandScripts(islandReg, islandRuntimeUrl),
     isDev,
   );
 
@@ -138,10 +191,12 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   return new Response(
     buildStream(`<!DOCTYPE html>\n${shellBeforeWithHead}`, pageHtml, shellAfter),
     {
+      status: responseStatus,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Transfer-Encoding": "chunked",
         "X-Content-Type-Options": "nosniff",
+        ...responseHeaders,
       },
     },
   );
@@ -202,23 +257,11 @@ function buildHeadInjection(headHtml: string, islandScripts: string, isDev: bool
   return parts.join("\n  ");
 }
 
-function buildIslandScripts(reg: IslandRegistry, _isDev: boolean): string {
+function buildIslandScripts(reg: IslandRegistry, runtimeUrl: string): string {
   if (reg.encountered.size === 0) return "";
-
-  const runtimeUrl = `${ISLANDS_SERVE_PATH}/${RUNTIME_BUNDLE}`;
-  const lines = [`<script type="module" src="${runtimeUrl}"></script>`];
-
-  for (const [id, meta] of reg.encountered) {
-    lines.push(
-      `<script type="module">` +
-      `import{hydrate}from"${runtimeUrl}";` +
-      `import Component from"${meta.bundleUrl}";` +
-      `hydrate("${id}",Component);` +
-      `</script>`,
-    );
-  }
-
-  return lines.join("\n  ");
+  // The runtime script auto-hydrates all island-placeholder elements on load
+  // by reading data-bundle from each placeholder. No per-island scripts needed.
+  return `<script type="module" src="${runtimeUrl}"></script>`;
 }
 
 // ---------------------------------------------------------------------------

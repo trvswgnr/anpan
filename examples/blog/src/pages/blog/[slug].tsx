@@ -1,31 +1,21 @@
-import { Head } from "bun-web-framework";
-import type { PageProps } from "bun-web-framework";
-import { getPost, likes } from "../../data/posts";
+import { Head, notFound } from "bun-web-framework";
+import type { PageProps, Loader } from "bun-web-framework";
+import type { RouteContext } from "bun-web-framework";
+import { getPost, likes, type Post } from "../../data/posts";
 import LikeButton from "../../components/LikeButton.island";
 
-export default function BlogPostPage({ params }: PageProps) {
+type Params = { slug: string };
+
+export const loader: Loader<{ post: Post; likeCount: number }, Params> = async ({
+  params,
+}: RouteContext<Params>) => {
   const post = getPost(params.slug);
+  if (!post) return notFound();
+  return { data: { post, likeCount: likes[post.slug] ?? 0 } };
+};
 
-  if (!post) {
-    // DX pain point: no way to set response status from a page component.
-    // A 404 requires the user to navigate away or rely on _404.tsx.
-    // Ideally pages could export a `loader` that returns data + status.
-    return (
-      <>
-        <Head>
-          <title>Post not found — Bun Blog</title>
-        </Head>
-        <div class="prose">
-          <h1>Post not found</h1>
-          <p>
-            <a href="/blog">Back to all posts</a>
-          </p>
-        </div>
-      </>
-    );
-  }
-
-  const likeCount = likes[post.slug] ?? 0;
+export default function BlogPostPage({ data, params }: PageProps<typeof loader, Params>) {
+  const { post, likeCount } = data;
 
   return (
     <>
@@ -57,7 +47,7 @@ export default function BlogPostPage({ params }: PageProps) {
 
         <footer class="post-full-footer">
           <div class="like-row">
-            <LikeButton slug={post.slug} initialCount={likeCount} />
+            <LikeButton slug={params.slug} initialCount={likeCount} />
           </div>
           <a href="/blog" class="back-link">
             &larr; All posts

@@ -1,12 +1,11 @@
-import { island, useState } from "bun-web-framework/islands";
+import { useState } from "bun-web-framework/islands";
 
-function ThemeToggle(_props: Record<string, never>) {
+export default function ThemeToggle(_props: Record<string, never>) {
   const [dark, setDark] = useState(false);
 
   function toggle() {
     const next = !dark;
     setDark(next);
-    // Apply to <html> so CSS variables cascade
     if (next) {
       document.documentElement.setAttribute("data-theme", "dark");
     } else {
@@ -25,5 +24,3 @@ function ThemeToggle(_props: Record<string, never>) {
     </button>
   );
 }
-
-export default island(ThemeToggle, import.meta.path);

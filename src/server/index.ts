@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { scanRoutes, matchRoute } from "../router/index.ts";
 import type { Route } from "../router/types.ts";
+import { createIslandPlugin } from "../islands/plugin.ts";
 import {
   renderPage,
   renderErrorPage,
@@ -15,6 +16,7 @@ import {
   ISLANDS_OUT_DIR,
   ISLANDS_SERVE_PATH,
 } from "../islands/bundler.ts";
+import type { IslandBundleResult } from "../islands/bundler.ts";
 import type { IslandManifest } from "../islands/types.ts";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +60,11 @@ export interface ServerConfig {
  * ```
  */
 export async function createServer(config: ServerConfig = {}): Promise<ReturnType<typeof Bun.serve>> {
+  // Register the auto-island plugin so .island.tsx files can omit the
+  // island(Component, import.meta.path) boilerplate. Must happen before any
+  // island files are dynamically imported.
+  Bun.plugin(createIslandPlugin());
+
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
   const publicDir = resolve(config.publicDir ?? "./public");
   const islandOutDir = resolve(ISLANDS_OUT_DIR);
@@ -74,7 +81,8 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   let routes: Route[] = await scanRoutes(pagesDir);
 
   // Bundle islands — scan from srcDir, not just pagesDir
-  let islandManifest: IslandManifest = await bundleIslands(srcDir, islandOutDir);
+  let { manifest: islandManifest, runtimeUrl: islandRuntimeUrl }: IslandBundleResult =
+    await bundleIslands(srcDir, islandOutDir);
 
   // ---------------------------------------------------------------------------
   // Core fetch handler
@@ -100,12 +108,13 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
         req,
         allRoutes: routes,
         islandManifest,
+        islandRuntimeUrl,
         islandOutDir,
         isDev,
       });
     }
 
-    const renderCtx = { match, req, allRoutes: routes, islandManifest, islandOutDir, isDev };
+    const renderCtx = { match, req, allRoutes: routes, islandManifest, islandRuntimeUrl, islandOutDir, isDev };
 
     // 4. API route
     if (match.route.type === "api") {
@@ -128,6 +137,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
           req,
           allRoutes: routes,
           islandManifest,
+          islandRuntimeUrl,
           islandOutDir,
           isDev,
         },
@@ -150,7 +160,8 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // Expose reload helper for dev server
   (server as unknown as Record<string, unknown>).__reloadRoutes = async () => {
     routes = await scanRoutes(pagesDir);
-    islandManifest = await bundleIslands(srcDir, islandOutDir);
+    ({ manifest: islandManifest, runtimeUrl: islandRuntimeUrl } =
+      await bundleIslands(srcDir, islandOutDir));
   };
 
   return server;

@@ -1,11 +1,11 @@
-import { island, useState } from "bun-web-framework/islands";
+import { useState } from "bun-web-framework/islands";
 
 interface Props {
   slug: string;
   initialCount: number;
 }
 
-function LikeButton({ slug, initialCount }: Props) {
+export default function LikeButton({ slug, initialCount }: Props) {
   const [count, setCount] = useState(initialCount);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,5 +41,3 @@ function LikeButton({ slug, initialCount }: Props) {
     </button>
   );
 }
-
-export default island(LikeButton, import.meta.path);

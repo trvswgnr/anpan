@@ -6,7 +6,10 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./islands": "./src/islands/index.ts",
+    "./islands": {
+      "browser": "./src/islands/browser-stub.ts",
+      "default": "./src/islands/index.ts"
+    },
     "./jsx-runtime": "./src/jsx/jsx-runtime.ts",
     "./jsx-dev-runtime": "./src/jsx/jsx-dev-runtime.ts"
   },

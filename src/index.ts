@@ -13,7 +13,10 @@ export { build } from "./build/index.ts";
 export type { BuildConfig } from "./build/index.ts";
 
 // Routing types
-export type { Route, RouteMatch, RouteContext } from "./router/types.ts";
+export type { Route, RouteMatch, RouteContext, Loader, LoaderReturn } from "./router/types.ts";
+
+// Response helpers
+export { notFound, redirect } from "./helpers.ts";
 
 // Renderer types
 export type { PageProps, LayoutProps, PageModule, LayoutModule } from "./renderer/index.ts";
