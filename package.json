@@ -1,0 +1,25 @@
+{
+  "name": "bun-web-framework",
+  "version": "0.1.0",
+  "description": "A lightweight Bun-native SSR framework with TSX templating and islands architecture",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./islands": "./src/islands/index.ts",
+    "./jsx-runtime": "./src/jsx/jsx-runtime.ts",
+    "./jsx-dev-runtime": "./src/jsx/jsx-dev-runtime.ts"
+  },
+  "scripts": {
+    "dev": "bun run --hot example/main.ts",
+    "build": "bun run src/build/index.ts",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
