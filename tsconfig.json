@@ -6,6 +6,8 @@
     "lib": ["ESNext", "DOM"],
     "strict": true,
     "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "bun-web-framework",
     "types": ["bun-types"],

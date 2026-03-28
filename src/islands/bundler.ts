@@ -56,8 +56,7 @@ export async function bundleIslands(
     outdir: outDir,
     target: "browser",
     splitting: true,
-    conditions: ["browser"],
-    plugins: [createIslandPlugin()],
+    plugins: [createIslandPlugin("browser")],
     minify: process.env.NODE_ENV === "production",
     naming: {
       entry: "[name]-[hash].js",

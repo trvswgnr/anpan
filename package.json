@@ -20,7 +20,8 @@
     "typecheck": "bun tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "playwright": "1.56.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

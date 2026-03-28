@@ -157,18 +157,15 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     });
   });
 
-  const headInjection = buildHeadInjection(
-    headCtx.serialize(),
-    buildIslandScripts(islandReg, islandRuntimeUrl),
-    isDev,
-  );
-
   // ---------------------------------------------------------------------------
   // Phase 2 — render the layout shell with a content marker where {children}
   // goes. This gives us the full outer HTML structure immediately, without
   // needing the page HTML to be ready first.
   //   • layouts[0] = innermost, layouts[last] = outermost root layout.
   //   • We wrap innermost → outermost so root layout is the outermost element.
+  //
+  // Must run inside runWithIslandRegistry so islands used in layouts (e.g. a
+  // ThemeToggle in the nav) register and get hydration scripts injected.
   // ---------------------------------------------------------------------------
   const markerVNode: VNode = { type: CONTENT_MARKER_TYPE, props: {} };
   let shellContent: VNode | Child | null = markerVNode;
@@ -181,7 +178,16 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     });
   }
 
-  const layoutHtml = renderToString(shellContent);
+  let layoutHtml = "";
+  runWithIslandRegistry(islandReg, () => {
+    layoutHtml = renderToString(shellContent);
+  });
+
+  const headInjection = buildHeadInjection(
+    headCtx.serialize(),
+    buildIslandScripts(islandReg, islandRuntimeUrl),
+    isDev,
+  );
 
   // Split the layout shell at the content marker
   const markerPos = layoutHtml.indexOf(CONTENT_MARKER);

@@ -54,8 +54,10 @@ export async function createDevServer(
 // ---------------------------------------------------------------------------
 
 function setupWatcher(dir: string, onChange: () => void): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bunWatch = (Bun as any).watch as ((dir: string) => AsyncIterable<{ eventType: string }>) | undefined;
   try {
-    const watcher = Bun.watch ? Bun.watch(dir) : null;
+    const watcher = bunWatch ? bunWatch(dir) : null;
     if (!watcher) {
       // Fallback: poll (rare, only on unsupported platforms)
       console.warn("[dev] Bun.watch not available — hot reload disabled");

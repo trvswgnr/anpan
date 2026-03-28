@@ -14,10 +14,10 @@ export const FRAGMENT = Symbol("Fragment");
  */
 export function h(
   type: string | ComponentType | symbol,
-  props: Props | null,
+  props: object | null,
   ...children: Child[]
 ): VNode {
-  const normalizedProps: Props = props ?? {};
+  const normalizedProps: Props = (props ?? {}) as Props;
   if (children.length === 1) {
     normalizedProps.children = children[0];
   } else if (children.length > 1) {

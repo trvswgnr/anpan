@@ -55,7 +55,7 @@ describe("runMiddleware", () => {
       const res = await next(req);
       return new Response(res.body, {
         ...res,
-        headers: { ...Object.fromEntries(res.headers), "x-timing": "10ms" },
+        headers: { ...(Object.fromEntries as (i: unknown) => Record<string, string>)(res.headers), "x-timing": "10ms" },
       });
     };
 

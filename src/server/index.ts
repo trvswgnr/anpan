@@ -127,11 +127,12 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 
   // Wrap with middleware
   const fetch = async (req: Request): Promise<Response> => {
+    let res: Response;
     try {
-      return await runMiddleware(middleware, req, handleRequest);
+      res = await runMiddleware(middleware, req, handleRequest);
     } catch (err) {
       console.error("[server] Unhandled error:", err);
-      return renderErrorPage(
+      res = await renderErrorPage(
         {
           match: { route: routes[0]!, params: {} },
           req,
@@ -144,6 +145,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
         err instanceof Error ? err : new Error(String(err)),
       );
     }
+    return applySecurityHeaders(await maybeCompress(req, res));
   };
 
   const server = Bun.serve({
@@ -156,6 +158,14 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
     },
     development: isDev,
   });
+
+  // Graceful shutdown on SIGTERM / SIGINT
+  const shutdown = () => {
+    server.stop(true);
+    process.exit(0);
+  };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
 
   // Expose reload helper for dev server
   (server as unknown as Record<string, unknown>).__reloadRoutes = async () => {
@@ -202,4 +212,53 @@ async function handleApiRoute(
 function resolve(path: string): string {
   if (path.startsWith("/")) return path;
   return join(process.cwd(), path);
+}
+
+const COMPRESSIBLE_RE = /text\/|application\/(json|javascript|xml|x-www-form-urlencoded)/;
+
+/**
+ * Compress the response body with gzip or deflate based on the client's
+ * Accept-Encoding header. Brotli is not yet supported by CompressionStream
+ * in Bun. Skips already-encoded responses and non-compressible content types.
+ */
+async function maybeCompress(req: Request, res: Response): Promise<Response> {
+  if (!res.body || res.headers.has("Content-Encoding")) return res;
+
+  const ct = res.headers.get("Content-Type") ?? "";
+  if (!COMPRESSIBLE_RE.test(ct)) return res;
+
+  const accept = req.headers.get("Accept-Encoding") ?? "";
+  const encoding: CompressionFormat | null =
+    accept.includes("gzip") ? "gzip" :
+    accept.includes("deflate") ? "deflate" :
+    null;
+
+  if (!encoding) return res;
+
+  const compressed = res.body.pipeThrough(new CompressionStream(encoding));
+  const headers = new Headers(res.headers);
+  headers.set("Content-Encoding", encoding);
+  headers.delete("Content-Length");
+  return new Response(compressed, { status: res.status, statusText: res.statusText, headers });
+}
+
+/**
+ * Adds default security headers to every response.
+ * These are safe, non-breaking defaults — apps can override via middleware.
+ */
+function applySecurityHeaders(res: Response): Response {
+  const headers = new Headers(res.headers);
+  if (!headers.has("X-Content-Type-Options")) {
+    headers.set("X-Content-Type-Options", "nosniff");
+  }
+  if (!headers.has("X-Frame-Options")) {
+    headers.set("X-Frame-Options", "SAMEORIGIN");
+  }
+  if (!headers.has("Referrer-Policy")) {
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  }
+  if (!headers.has("X-XSS-Protection")) {
+    headers.set("X-XSS-Protection", "0");
+  }
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }

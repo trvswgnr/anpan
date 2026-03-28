@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { renderToString } from "../jsx/runtime.ts";
-import type { ComponentType, Props } from "../jsx/types.ts";
+import type { ComponentType } from "../jsx/types.ts";
 import type { IslandManifest, IslandMeta } from "./types.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 
@@ -51,7 +51,7 @@ export class IslandRegistry {
  * Usage:
  *   export default island(Counter, import.meta.path);
  */
-export function island<P extends Props>(
+export function island<P>(
   component: ComponentType<P>,
   filePath: string,
   exportName = "default",

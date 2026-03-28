@@ -1,31 +1,34 @@
 import type { BunPlugin } from "bun";
+import { join } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Auto-island Bun plugin
 //
-// Transforms any .island.{tsx,ts,jsx,js} file that does NOT already call
-// island() so that its default export is automatically wrapped.
+// Server mode (registered via Bun.plugin() in createServer):
+//   Wraps the default export with island() so it renders as a placeholder
+//   and registers itself in the IslandRegistry during SSR.
 //
-// Users can write plain components without any boilerplate:
+//   Users write plain components:
+//     export default function Counter({ initial = 0 }) { ... }
 //
-//   // Counter.island.tsx
-//   import { useState } from "bun-web-framework/islands";
+//   The plugin rewrites this to:
+//     function Counter({ initial = 0 }) { ... }
+//     import { island as __i__ } from "bun-web-framework/islands";
+//     export default __i__(Counter, "/abs/path/to/Counter.island.tsx");
 //
-//   export default function Counter({ initial = 0 }) {
-//     const [count, setCount] = useState(initial);
-//     return <button onclick={() => setCount(count + 1)}>Count: {count}</button>;
-//   }
-//
-// The plugin rewrites this at load time to:
-//
-//   function Counter({ initial = 0 }) { ... }
-//   import { island as __i__ } from "bun-web-framework/islands";
-//   export default __i__(Counter, "/abs/path/to/Counter.island.tsx");
-//
-// Works for both server-side (Bun.plugin()) and browser-side (Bun.build() plugins).
+// Browser mode (passed to Bun.build() plugins):
+//   Rewrites "bun-web-framework/islands" imports to point directly at
+//   client-runtime.ts so that:
+//     a) useState is the reactive browser version (not the server noop)
+//     b) the node:crypto / node:async_hooks server code is never bundled
+//   The default export is left as the raw component — island() is identity
+//   in the browser so wrapping is unnecessary.
 // ---------------------------------------------------------------------------
 
-export function createIslandPlugin(): BunPlugin {
+const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
+const ISLANDS_IMPORT_RE = /from\s+["']bun-web-framework\/islands["']/g;
+
+export function createIslandPlugin(mode: "server" | "browser" = "server"): BunPlugin {
   return {
     name: "bun-web-framework:auto-island",
     setup(build) {
@@ -33,13 +36,26 @@ export function createIslandPlugin(): BunPlugin {
         const source = await Bun.file(args.path).text();
         const loader = detectLoader(args.path);
 
-        // If already manually wrapped, skip transformation.
+        if (mode === "browser") {
+          // Rewrite framework island imports to client-runtime so useState is
+          // the real reactive version and no server-only code is bundled.
+          // Also strip any island() wrapper exports since the component is
+          // used directly by the hydration runtime.
+          let transformed = source.replace(ISLANDS_IMPORT_RE, `from "${CLIENT_RUNTIME}"`);
+          // Remove manually-written island() default exports (backward compat)
+          transformed = transformed.replace(
+            /\nexport\s+default\s+island\s*\([^)]+\)\s*;?\s*$/m,
+            "",
+          );
+          return { contents: transformed, loader };
+        }
+
+        // Server mode: auto-wrap if not already wrapped.
         if (/\bisland\s*\(/.test(source)) {
           return { contents: source, loader };
         }
 
-        const transformed = autoWrap(source, args.path);
-        return { contents: transformed, loader };
+        return { contents: autoWrap(source, args.path), loader };
       });
     },
   };

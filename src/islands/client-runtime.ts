@@ -86,7 +86,7 @@ function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
 
   const vnode = node as VNode;
 
-  if ((vnode.type as symbol) === Fragment) {
+  if ((vnode.type as unknown as symbol) === Fragment) {
     renderToDom(vnode.props.children, parent);
     return;
   }
@@ -131,7 +131,7 @@ function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
 function mount(
   component: (props: Record<string, unknown>) => VNode | null,
   props: Record<string, unknown>,
-  placeholder: Element,
+  placeholder: HTMLElement,
 ): void {
   const slots: StateSlot<unknown>[] = [];
 
@@ -140,18 +140,16 @@ function mount(
     currentSlots = slots;
     currentSlotIdx = 0;
 
-    // Register all slots to trigger re-render
-    for (const slot of slots) {
-      slot.listeners.add(render);
-    }
-
     const vnode = component(props);
-
-    // Clear listeners before re-registering (prevents duplicates)
-    for (const slot of slots) slot.listeners.clear();
 
     currentSlots = null;
     currentSlotIdx = 0;
+
+    // Register render on all slots after each render (including newly created ones).
+    // Set.add() is idempotent so no dedup needed.
+    for (const slot of slots) {
+      slot.listeners.add(render);
+    }
 
     // Build new DOM
     const fragment = document.createDocumentFragment();
@@ -159,12 +157,8 @@ function mount(
 
     // Replace existing content
     if (placeholder.parentElement) {
-      // On first mount, replace the placeholder; on re-render, replace the island root
-      const islandRoot = placeholder.dataset.mounted
-        ? placeholder
-        : placeholder;
-      islandRoot.innerHTML = "";
-      islandRoot.appendChild(fragment);
+      placeholder.innerHTML = "";
+      placeholder.appendChild(fragment);
       placeholder.dataset.mounted = "1";
     }
   }

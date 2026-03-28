@@ -10,6 +10,7 @@ import {
 } from "../index.ts";
 import { renderToString } from "../../jsx/runtime.ts";
 import type { IslandManifest } from "../types.ts";
+import type { VNode } from "../../jsx/types.ts";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -18,9 +19,9 @@ import type { IslandManifest } from "../types.ts";
 const FIXTURE_DIR = join(import.meta.dir, "fixtures");
 const FAKE_FILE = "/project/src/components/Counter.island.tsx";
 
-function Counter({ initial = 0 }: { initial?: number }) {
+function Counter({ initial = 0 }: { initial?: number }): VNode {
   const [count] = useState(initial);
-  return { type: "span", props: { children: String(count) } } as unknown as ReturnType<typeof Counter>;
+  return { type: "span", props: { children: String(count) } };
 }
 
 // ---------------------------------------------------------------------------
