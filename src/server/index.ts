@@ -24,6 +24,9 @@ import type { IslandManifest } from "../islands/types.ts";
 export interface ServerConfig {
   /** Directory containing page files. Default: "./src/pages" */
   pagesDir?: string;
+  /** Root source directory scanned for .island.tsx files. Defaults to the
+   *  parent of pagesDir so components/ siblings are included. */
+  srcDir?: string;
   /** Directory for static assets. Default: "./public" */
   publicDir?: string;
   /** Port to listen on. Default: 3000 */
@@ -47,11 +50,17 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   const isDev = config.dev ?? process.env.NODE_ENV !== "production";
   const middleware = config.middleware ?? [];
 
+  // Island scan root: explicit srcDir, or parent of pagesDir so that
+  // sibling directories like components/ are included automatically.
+  const srcDir = config.srcDir
+    ? resolve(config.srcDir)
+    : join(pagesDir, "..");
+
   // Scan routes
   let routes: Route[] = await scanRoutes(pagesDir);
 
-  // Bundle islands
-  let islandManifest: IslandManifest = await bundleIslands(pagesDir, islandOutDir);
+  // Bundle islands — scan from srcDir, not just pagesDir
+  let islandManifest: IslandManifest = await bundleIslands(srcDir, islandOutDir);
 
   // ---------------------------------------------------------------------------
   // Core fetch handler
@@ -127,7 +136,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // Expose reload helper for dev server
   (server as unknown as Record<string, unknown>).__reloadRoutes = async () => {
     routes = await scanRoutes(pagesDir);
-    islandManifest = await bundleIslands(pagesDir, islandOutDir);
+    islandManifest = await bundleIslands(srcDir, islandOutDir);
   };
 
   return server;
