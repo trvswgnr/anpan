@@ -24,7 +24,6 @@ export interface PageProps extends RouteContext {}
 
 export interface LayoutProps extends RouteContext {
   children: VNode | null;
-  head: string; // serialized <head> inner HTML
 }
 
 export interface RenderContext {
@@ -37,7 +36,18 @@ export interface RenderContext {
 }
 
 // ---------------------------------------------------------------------------
-// renderPage — streams a full HTML document
+// Content marker — emitted by renderToString where {children} appears in
+// the layout, so we can split the layout shell into before/after.
+// ---------------------------------------------------------------------------
+
+/** Unique sentinel emitted into the layout HTML where the page content goes. */
+const CONTENT_MARKER = "<!--_BWFW_CONTENT_-->";
+
+/** Special VNode type that emits CONTENT_MARKER during renderToString. */
+export const CONTENT_MARKER_TYPE = "__bwfw_content_marker__";
+
+// ---------------------------------------------------------------------------
+// renderPage — true streaming: head sent immediately, body follows
 // ---------------------------------------------------------------------------
 
 export async function renderPage(ctx: RenderContext): Promise<Response> {
@@ -45,7 +55,6 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   const url = new URL(req.url);
   const routeCtx: RouteContext = { params: match.params, url, req };
 
-  // Set up per-request contexts
   const headCtx = new HeadContext();
   const islandReg = new IslandRegistry(islandManifest);
 
@@ -61,108 +70,139 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     throw new Error(`Page module must export a default function: ${match.route.filePath}`);
   }
 
-  // Find applicable layouts (closest first)
+  // Pre-load layout modules
   const layouts = findLayouts(allRoutes, match.route);
-
-  // Pre-load all layout modules
   const layoutMods: LayoutModule[] = [];
   for (const layoutRoute of layouts) {
     const mod = await import(layoutRoute.filePath) as LayoutModule;
     if (typeof mod.default === "function") layoutMods.push(mod);
   }
 
-  // Render the full VNode tree AND collect <Head> content in one pass.
-  // All component calls (page, layouts, Head) happen inside renderToString,
-  // so we keep HeadContext active throughout the entire render.
-  let rawHtml = "";
+  // ---------------------------------------------------------------------------
+  // Phase 1 — render the page component.
+  //   • Calls <Head> which registers head content into headCtx.
+  //   • Calls island() wrappers which register into islandReg.
+  //   • Result: pageHtml string + all metadata known.
+  // ---------------------------------------------------------------------------
+  let pageHtml = "";
   runWithHeadContext(headCtx, () => {
     runWithIslandRegistry(islandReg, () => {
-      // Build the VNode tree (components are invoked by renderToString, not here)
-      let content: VNode | Child | null = pageMod.default(routeCtx);
-
-      // Wrap in layouts outermost-last
-      for (const layoutMod of layoutMods) {
-        const inner = content;
-        content = layoutMod.default({
-          ...routeCtx,
-          children: inner as VNode | null,
-          head: "", // head placeholder — filled after rendering via HTMLRewriter
-        });
-      }
-
-      rawHtml = renderToString(content);
+      pageHtml = renderToString(pageMod.default(routeCtx));
     });
   });
 
-  // Inject island bootstrap scripts
-  const islandScripts = buildIslandScripts(islandReg, isDev);
-  const finalHtml = await injectHead(rawHtml, headCtx.serialize(), islandScripts, isDev);
+  const headInjection = buildHeadInjection(
+    headCtx.serialize(),
+    buildIslandScripts(islandReg, isDev),
+    isDev,
+  );
 
-  // Stream the HTML in chunks for true streaming delivery
-  return new Response(stringToStream(finalHtml), {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Transfer-Encoding": "chunked",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
-}
+  // ---------------------------------------------------------------------------
+  // Phase 2 — render the layout shell with a content marker where {children}
+  // goes. This gives us the full outer HTML structure immediately, without
+  // needing the page HTML to be ready first.
+  //   • layouts[0] = innermost, layouts[last] = outermost root layout.
+  //   • We wrap innermost → outermost so root layout is the outermost element.
+  // ---------------------------------------------------------------------------
+  const markerVNode: VNode = { type: CONTENT_MARKER_TYPE, props: {} };
+  let shellContent: VNode | Child | null = markerVNode;
 
-// ---------------------------------------------------------------------------
-// Inject head content and island scripts using HTMLRewriter (string-based).
-// Note: Bun's HTMLRewriter only supports string/Uint8Array bodies, not streams.
-// ---------------------------------------------------------------------------
+  for (const layoutMod of layoutMods) {
+    const inner = shellContent;
+    shellContent = layoutMod.default({
+      ...routeCtx,
+      children: inner as VNode | null,
+    });
+  }
 
-async function injectHead(
-  html: string,
-  headHtml: string,
-  islandScripts: string,
-  isDev: boolean,
-): Promise<string> {
-  const rewriter = new HTMLRewriter()
-    .on("head", {
-      element(el) {
-        if (headHtml) {
-          el.append(`\n    ${headHtml}`, { html: true });
-        }
-        if (islandScripts) {
-          el.append(`\n    ${islandScripts}`, { html: true });
-        }
-        if (isDev) {
-          el.append(
-            `\n    <script>(function(){var es=new EventSource('/__dev/reload');` +
-            `es.onmessage=function(e){if(e.data==='reload')location.reload()};` +
-            `es.onerror=function(){setTimeout(function(){location.reload()},1000)}})();</script>`,
-            { html: true },
-          );
-        }
+  const layoutHtml = renderToString(shellContent);
+
+  // Split the layout shell at the content marker
+  const markerPos = layoutHtml.indexOf(CONTENT_MARKER);
+  const shellBefore = markerPos >= 0 ? layoutHtml.slice(0, markerPos) : layoutHtml;
+  const shellAfter = markerPos >= 0 ? layoutHtml.slice(markerPos + CONTENT_MARKER.length) : "";
+
+  // Inject <head> additions (title, meta, island scripts, dev reload) just
+  // before </head> in the layout's head section.
+  const shellBeforeWithHead = spliceBeforeCloseHead(shellBefore, headInjection);
+
+  // ---------------------------------------------------------------------------
+  // Stream — 3 chunks:
+  //   1. DOCTYPE + layout shell head/opening body (sent immediately)
+  //   2. Page HTML (available right away since Phase 1 is synchronous)
+  //   3. Layout shell closing tags (footer, </body>, </html>)
+  //
+  // When Phase 1 becomes async (data fetching, Suspense), chunk 1 will land
+  // in the browser before chunk 2 is ready — that's the streaming payoff.
+  // ---------------------------------------------------------------------------
+  return new Response(
+    buildStream(`<!DOCTYPE html>\n${shellBeforeWithHead}`, pageHtml, shellAfter),
+    {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "X-Content-Type-Options": "nosniff",
       },
-    });
-
-  return rewriter.transform(new Response(`<!DOCTYPE html>\n${html}`)).text();
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Stream a string as Uint8Array chunks for true streaming delivery
+// Streaming helpers
 // ---------------------------------------------------------------------------
 
-const CHUNK_SIZE = 16 * 1024; // 16 KB per chunk
+const encoder = new TextEncoder();
 
-function stringToStream(html: string): ReadableStream<Uint8Array> {
-  const encoder = new TextEncoder();
+/**
+ * Build a ReadableStream from three pre-computed string segments.
+ * Each segment is its own chunk — the browser can start parsing chunk 1
+ * while chunks 2 and 3 are still being assembled.
+ *
+ * When async page rendering is added (data fetching, Suspense), chunk 2
+ * will be a ReadableStream that we pipe rather than a string.
+ */
+function buildStream(
+  before: string,
+  content: string,
+  after: string,
+): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     start(controller) {
-      let offset = 0;
-      while (offset < html.length) {
-        controller.enqueue(encoder.encode(html.slice(offset, offset + CHUNK_SIZE)));
-        offset += CHUNK_SIZE;
-      }
+      // Send the full <head> + layout opening immediately so the browser
+      // can start fetching CSS/fonts before the body is ready.
+      if (before) controller.enqueue(encoder.encode(before));
+      // Send page body content.
+      if (content) controller.enqueue(encoder.encode(content));
+      // Send layout closing tags.
+      if (after) controller.enqueue(encoder.encode(after));
       controller.close();
     },
   });
 }
 
-function buildIslandScripts(reg: IslandRegistry, isDev: boolean): string {
+/** Insert extra content just before </head>. Falls back to prepending. */
+function spliceBeforeCloseHead(html: string, extra: string): string {
+  if (!extra) return html;
+  const idx = html.lastIndexOf("</head>");
+  if (idx < 0) return extra + html;
+  return html.slice(0, idx) + "\n  " + extra + "\n" + html.slice(idx);
+}
+
+function buildHeadInjection(headHtml: string, islandScripts: string, isDev: boolean): string {
+  const parts: string[] = [];
+  if (headHtml) parts.push(headHtml);
+  if (islandScripts) parts.push(islandScripts);
+  if (isDev) {
+    parts.push(
+      `<script>(function(){var es=new EventSource('/__dev/reload');` +
+      `es.onmessage=function(e){if(e.data==='reload')location.reload()};` +
+      `es.onerror=function(){setTimeout(function(){location.reload()},1000)}})();</script>`,
+    );
+  }
+  return parts.join("\n  ");
+}
+
+function buildIslandScripts(reg: IslandRegistry, _isDev: boolean): string {
   if (reg.encountered.size === 0) return "";
 
   const runtimeUrl = `${ISLANDS_SERVE_PATH}/${RUNTIME_BUNDLE}`;
@@ -178,28 +218,25 @@ function buildIslandScripts(reg: IslandRegistry, isDev: boolean): string {
     );
   }
 
-  return lines.join("\n    ");
+  return lines.join("\n  ");
 }
 
 // ---------------------------------------------------------------------------
-// Render an error page
+// Error / 404 pages
 // ---------------------------------------------------------------------------
 
 export async function renderErrorPage(
   ctx: RenderContext,
   error: Error,
 ): Promise<Response> {
-  const { allRoutes, req, islandManifest, islandOutDir, isDev } = ctx;
+  const { allRoutes, isDev } = ctx;
   const errorRoute = allRoutes.find((r) => r.type === "error");
 
   if (errorRoute) {
     try {
-      return await renderPage({
-        ...ctx,
-        match: { route: errorRoute, params: {} },
-      });
+      return await renderPage({ ...ctx, match: { route: errorRoute, params: {} } });
     } catch {
-      // Fall through to inline error
+      // fall through
     }
   }
 
@@ -215,26 +252,16 @@ export async function renderErrorPage(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Render a 404 page
-// ---------------------------------------------------------------------------
-
 export async function renderNotFound(ctx: RenderContext): Promise<Response> {
   const { allRoutes } = ctx;
   const notFoundRoute = allRoutes.find((r) => r.type === "notfound");
 
   if (notFoundRoute) {
     try {
-      const res = await renderPage({
-        ...ctx,
-        match: { route: notFoundRoute, params: {} },
-      });
-      return new Response(res.body, {
-        status: 404,
-        headers: res.headers,
-      });
+      const res = await renderPage({ ...ctx, match: { route: notFoundRoute, params: {} } });
+      return new Response(res.body, { status: 404, headers: res.headers });
     } catch {
-      // Fall through
+      // fall through
     }
   }
 
@@ -245,8 +272,5 @@ export async function renderNotFound(ctx: RenderContext): Promise<Response> {
 }
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

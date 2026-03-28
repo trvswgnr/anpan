@@ -107,6 +107,12 @@ export function renderToString(node: unknown): string {
     return renderToString(result);
   }
 
+  // Special content marker — emits the sentinel string used by the renderer
+  // to split the layout shell into before/after the page content.
+  if (vnode.type === "__bwfw_content_marker__") {
+    return "<!--_BWFW_CONTENT_-->";
+  }
+
   if (typeof vnode.type !== "string") return "";
 
   const tag = vnode.type;

@@ -1,6 +1,6 @@
 import type { LayoutProps } from "../../src/index.ts";
 
-export default function RootLayout({ children, head }: LayoutProps) {
+export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en">
       <head>
