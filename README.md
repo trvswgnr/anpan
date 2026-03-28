@@ -267,7 +267,7 @@ By default, every component is server-only: it renders to HTML and sends no Java
 
 ### Defining an island
 
-Name the file `*.island.tsx` and export a default function. The framework wraps it automatically.
+Name the file `*.island.tsx` and export a default function.
 
 ```tsx
 // components/Counter.island.tsx
@@ -283,9 +283,6 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
     </div>
   );
 }
-```
-
-No `island()` call needed. A Bun plugin registered by `createServer()` detects the `.island.tsx` extension and handles the wrapping at load time.
 
 ### Using an island
 
