@@ -105,6 +105,10 @@ export function stableId(filePath: string, exportName: string): string {
 // Scan for .island.tsx files (used by bundler at startup)
 // ---------------------------------------------------------------------------
 
+/**
+ * Find all `.island.{tsx,ts,jsx,js}` files under rootDir.
+ * Returns absolute paths. Used by the bundler at startup.
+ */
 export async function scanIslandFiles(rootDir: string): Promise<string[]> {
   const glob = new Bun.Glob("**/*.island.{tsx,ts,jsx,js}");
   const files: string[] = [];
@@ -120,6 +124,16 @@ export async function scanIslandFiles(rootDir: string): Promise<string[]> {
 // The actual implementation is in client-runtime.ts (bundled for browser).
 // ---------------------------------------------------------------------------
 
+/**
+ * State hook for island components.
+ *
+ * On the server, returns `[initialValue, noop]` so the static snapshot always
+ * reflects the initial state. In the browser (after hydration), the client
+ * runtime replaces this with a real reactive implementation.
+ *
+ * Only works inside components wrapped with `island()`. Do not call it in
+ * server-only components.
+ */
 export function useState<T>(initial: T): [T, (val: T) => void] {
   // On the server, island components are rendered without interactivity.
   // If someone calls useState during SSR it just returns the initial value.

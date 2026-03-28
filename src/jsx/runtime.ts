@@ -6,6 +6,12 @@ export const FRAGMENT = Symbol("Fragment");
 // VNode creation
 // ---------------------------------------------------------------------------
 
+/**
+ * Create a virtual DOM node. This is the JSX factory function.
+ *
+ * You rarely call this directly. TSX compiles `<div>` to `h("div", ...)` for
+ * you when `jsxImportSource` is set to `"bun-web-framework"` in tsconfig.
+ */
 export function h(
   type: string | ComponentType | symbol,
   props: Props | null,
@@ -87,6 +93,13 @@ function propToAttr(name: string): string {
 // Synchronous render to string
 // ---------------------------------------------------------------------------
 
+/**
+ * Render a VNode tree to an HTML string. Synchronous.
+ *
+ * Used internally by the renderer and by island() to produce server snapshots.
+ * You can also call it directly if you need a string for something outside the
+ * normal request/response cycle.
+ */
 export function renderToString(node: unknown): string {
   if (node === null || node === undefined || node === false) return "";
   if (typeof node === "string") return escapeHtml(node);
@@ -145,6 +158,13 @@ export function renderToString(node: unknown): string {
 
 const encoder = new TextEncoder();
 
+/**
+ * Render a VNode tree to a ReadableStream of UTF-8 chunks.
+ *
+ * The framework uses this to build the streaming page response. Each node
+ * emits one or more chunks as it is visited, so large pages can begin
+ * reaching the browser before the full tree is serialized.
+ */
 export function renderToStream(node: unknown): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
     start(controller) {

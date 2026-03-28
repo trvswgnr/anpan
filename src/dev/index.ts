@@ -7,6 +7,13 @@ import { createServer, type ServerConfig } from "../server/index.ts";
 //   • Injects a tiny hot-reload script into every page (done in renderer)
 // ---------------------------------------------------------------------------
 
+/**
+ * Create the dev server.
+ *
+ * Same as createServer() but watches pagesDir for file changes and sends a
+ * reload signal to the browser over SSE. A small script is injected into
+ * every page that listens for the signal and calls location.reload().
+ */
 export async function createDevServer(
   config: ServerConfig = {},
 ): Promise<ReturnType<typeof Bun.serve>> {

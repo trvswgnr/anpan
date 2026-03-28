@@ -43,6 +43,20 @@ export interface ServerConfig {
 // createServer
 // ---------------------------------------------------------------------------
 
+/**
+ * Create and start the HTTP server.
+ *
+ * Scans pagesDir for routes, bundles islands from srcDir, and calls
+ * Bun.serve(). Returns the server instance.
+ *
+ * @example
+ * ```ts
+ * const server = await createServer({
+ *   pagesDir: "./src/pages",
+ *   port: 3000,
+ * });
+ * ```
+ */
 export async function createServer(config: ServerConfig = {}): Promise<ReturnType<typeof Bun.serve>> {
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
   const publicDir = resolve(config.publicDir ?? "./public");

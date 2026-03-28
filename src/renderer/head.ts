@@ -112,6 +112,26 @@ export function runWithHeadContext<T>(ctx: HeadContext, fn: () => T): T {
 import type { Props } from "../jsx/types.ts";
 import { FRAGMENT } from "../jsx/runtime.ts";
 
+/**
+ * Collect head elements from inside a page or layout component.
+ *
+ * Children are not rendered inline. Instead they are injected into the
+ * document `<head>` by the renderer after the page finishes rendering.
+ *
+ * Deduplication rules:
+ * - `<title>`: last one wins.
+ * - `<meta name="...">`: deduplicated by name.
+ * - `<meta property="...">`: deduplicated by property.
+ * - Everything else: appended in order.
+ *
+ * @example
+ * ```tsx
+ * <Head>
+ *   <title>My page</title>
+ *   <meta name="description" content="..." />
+ * </Head>
+ * ```
+ */
 export function Head({ children }: Props): null {
   const ctx = getHeadContext();
   if (ctx && children !== undefined) {
