@@ -13,11 +13,13 @@ import { runMiddleware, type Middleware } from "../middleware/index.ts";
 import {
   bundleIslands,
   serveIsland,
+  resolveJsxFramework,
   ISLANDS_OUT_DIR,
   ISLANDS_SERVE_PATH,
 } from "../islands/bundler.ts";
-import type { IslandBundleResult } from "../islands/bundler.ts";
+import type { IslandBundleResult, JsxFrameworkAdapter } from "../islands/bundler.ts";
 import type { IslandManifest } from "../islands/types.ts";
+import { setServerAdapter } from "../islands/index.ts";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -39,6 +41,26 @@ export interface ServerConfig {
   middleware?: Middleware[];
   /** Enable development mode (verbose errors, hot reload). */
   dev?: boolean;
+  /**
+   * Custom JSX framework adapter for islands (React, Preact, Solid, etc.).
+   *
+   * React and Preact are auto-detected from `jsxImportSource` in `tsconfig.json`
+   * — no adapter needed for those. Supply this for any other framework.
+   *
+   * @example Solid.js
+   * ```ts
+   * import { renderToString } from "solid-js/web";
+   * createServer({
+   *   jsxFramework: {
+   *     serverRender: (comp, props) => renderToString(() => (comp as any)(props)),
+   *     clientMountSnippet:
+   *       `import{render as __sr__}from"solid-js/web";` +
+   *       `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+   *   },
+   * });
+   * ```
+   */
+  jsxFramework?: JsxFrameworkAdapter;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,10 +82,16 @@ export interface ServerConfig {
  * ```
  */
 export async function createServer(config: ServerConfig = {}): Promise<ReturnType<typeof Bun.serve>> {
+  // Resolve the JSX framework adapter (explicit config > tsconfig detection > null).
+  const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
+
+  // Register the global adapter so island() wrappers use the right serverRender.
+  setServerAdapter(adapter);
+
   // Register the auto-island plugin so .island.tsx files can omit the
   // island(Component, import.meta.path) boilerplate. Must happen before any
   // island files are dynamically imported.
-  Bun.plugin(createIslandPlugin());
+  Bun.plugin(createIslandPlugin("server", { adapter }));
 
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
   const publicDir = resolve(config.publicDir ?? "./public");
@@ -82,7 +110,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 
   // Bundle islands — scan from srcDir, not just pagesDir
   let { manifest: islandManifest, runtimeUrl: islandRuntimeUrl }: IslandBundleResult =
-    await bundleIslands(srcDir, islandOutDir);
+    await bundleIslands(srcDir, islandOutDir, adapter);
 
   // ---------------------------------------------------------------------------
   // Core fetch handler
@@ -171,7 +199,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   (server as unknown as Record<string, unknown>).__reloadRoutes = async () => {
     routes = await scanRoutes(pagesDir);
     ({ manifest: islandManifest, runtimeUrl: islandRuntimeUrl } =
-      await bundleIslands(srcDir, islandOutDir));
+      await bundleIslands(srcDir, islandOutDir, adapter));
   };
 
   return server;

@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { renderToString } from "../jsx/runtime.ts";
+import { renderToString as builtinRenderToString } from "../jsx/runtime.ts";
 import type { ComponentType } from "../jsx/types.ts";
-import type { IslandManifest, IslandMeta } from "./types.ts";
+import type { IslandManifest, IslandMeta, JsxFrameworkAdapter } from "./types.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 export type { IslandManifest, IslandMeta } from "./types.ts";
+export type { JsxFrameworkAdapter } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // Island registry — per-request context
@@ -38,8 +39,33 @@ export class IslandRegistry {
 }
 
 // ---------------------------------------------------------------------------
+// Global server-side adapter — set once at startup by createServer()
+// ---------------------------------------------------------------------------
+
+let _serverAdapter: JsxFrameworkAdapter | null = null;
+
+/**
+ * Register a framework adapter to be used by all island() wrappers on the
+ * server. Called by createServer() before any island files are imported.
+ */
+export function setServerAdapter(adapter: JsxFrameworkAdapter | null): void {
+  _serverAdapter = adapter;
+}
+
+// ---------------------------------------------------------------------------
 // island() wrapper — marks a component for client-side hydration
 // ---------------------------------------------------------------------------
+
+export interface IslandOptions<P> {
+  /** Export name, usually "default" */
+  exportName?: string;
+  /**
+   * Custom server-side snapshot renderer. When provided, called instead of
+   * the built-in renderToString. Injected automatically by the plugin for
+   * React/Preact islands; set manually for other frameworks.
+   */
+  render?: (props: P) => string;
+}
 
 /**
  * Wrap a component to mark it as a client-side island.
@@ -50,20 +76,49 @@ export class IslandRegistry {
  *
  * Usage:
  *   export default island(Counter, import.meta.path);
+ *
+ * The auto-island plugin generates this call automatically — you rarely need
+ * to write it by hand.
  */
 export function island<P>(
   component: ComponentType<P>,
   filePath: string,
-  exportName = "default",
+  exportNameOrOptions?: string | IslandOptions<P>,
 ): ComponentType<P> {
+  const exportName =
+    typeof exportNameOrOptions === "string"
+      ? exportNameOrOptions
+      : (exportNameOrOptions?.exportName ?? "default");
+
+  const renderOpt =
+    typeof exportNameOrOptions === "object" ? exportNameOrOptions?.render : undefined;
+
   const id = stableId(filePath, exportName);
 
   const IslandWrapper = (props: P) => {
     const registry = getIslandRegistry();
     const meta = registry?.register(id);
 
-    // Render the server snapshot
-    const snapshot = renderToString(component(props));
+    // Build the server-side HTML snapshot.
+    // Priority: inline render option (injected by plugin for React/Preact)
+    //           > global _serverAdapter (set by createServer for custom frameworks)
+    //           > built-in renderToString (our mini JSX runtime)
+    let snapshot = "";
+    if (typeof renderOpt === "function") {
+      snapshot = renderOpt(props);
+    } else if (_serverAdapter !== null) {
+      try {
+        snapshot = _serverAdapter.serverRender(component, props as Record<string, unknown>);
+      } catch {
+        snapshot = "";
+      }
+    } else {
+      try {
+        snapshot = builtinRenderToString(component(props));
+      } catch {
+        snapshot = "";
+      }
+    }
 
     // Serialize props (strip non-serializable values like functions)
     const serializedProps = JSON.stringify(props, (_key, val) => {

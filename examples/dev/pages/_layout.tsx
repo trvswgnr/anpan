@@ -1,4 +1,4 @@
-import type { LayoutProps } from "../../src/index.ts";
+import type { LayoutProps } from "../../../src/index.ts";
 
 export default function RootLayout({ children }: LayoutProps) {
   return (

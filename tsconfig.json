@@ -19,6 +19,6 @@
       "bun-web-framework/jsx-dev-runtime": ["./src/jsx/jsx-dev-runtime.ts"]
     }
   },
-  "include": ["src/**/*", "example/**/*"],
+  "include": ["src/**/*", "examples/dev/**/*"],
   "exclude": ["node_modules", ".bun", "dist"]
 }

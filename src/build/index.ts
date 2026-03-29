@@ -1,11 +1,17 @@
 import { join } from "node:path";
-import { bundleIslands } from "../islands/bundler.ts";
+import { bundleIslands, resolveJsxFramework } from "../islands/bundler.ts";
+import type { JsxFrameworkAdapter } from "../islands/bundler.ts";
 
 export interface BuildConfig {
   /** Input pages directory */
   pagesDir?: string;
   /** Output directory */
   outDir?: string;
+  /**
+   * Custom JSX framework adapter for islands.
+   * React and Preact are auto-detected from tsconfig — no adapter needed.
+   */
+  jsxFramework?: JsxFrameworkAdapter;
 }
 
 export async function build(config: BuildConfig = {}): Promise<void> {
@@ -13,8 +19,10 @@ export async function build(config: BuildConfig = {}): Promise<void> {
   const outDir = resolve(config.outDir ?? "./dist");
   const islandOutDir = join(outDir, "islands");
 
+  const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
+
   console.log("[build] Bundling islands...");
-  const { manifest } = await bundleIslands(pagesDir, islandOutDir);
+  const { manifest } = await bundleIslands(pagesDir, islandOutDir, adapter);
   console.log(`[build] Bundled ${manifest.size} island(s) → ${islandOutDir}`);
 
   // Write manifest JSON for reference

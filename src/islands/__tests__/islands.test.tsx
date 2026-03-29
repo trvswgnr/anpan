@@ -237,7 +237,7 @@ describe("useState (server-side)", () => {
 describe("scanIslandFiles", () => {
   test("finds .island.tsx files", async () => {
     const files = await scanIslandFiles(
-      join(import.meta.dir, "../../../example"),
+      join(import.meta.dir, "../../../examples/dev"),
     );
     expect(files.length).toBeGreaterThan(0);
     expect(files.every((f) => f.includes(".island."))).toBe(true);
@@ -245,7 +245,7 @@ describe("scanIslandFiles", () => {
 
   test("returns absolute paths", async () => {
     const files = await scanIslandFiles(
-      join(import.meta.dir, "../../../example"),
+      join(import.meta.dir, "../../../examples/dev"),
     );
     expect(files.every((f) => f.startsWith("/"))).toBe(true);
   });

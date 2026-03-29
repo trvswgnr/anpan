@@ -3,8 +3,8 @@ import { createServer } from "../index.ts";
 import { join } from "node:path";
 
 // Use the example app as the integration test fixture
-const PAGES_DIR = join(import.meta.dir, "../../../example/pages");
-const PUBLIC_DIR = join(import.meta.dir, "../../../example/public");
+const PAGES_DIR = join(import.meta.dir, "../../../examples/dev/pages");
+const PUBLIC_DIR = join(import.meta.dir, "../../../examples/dev/public");
 
 let server: ReturnType<typeof Bun.serve>;
 let base: string;

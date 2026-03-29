@@ -2,7 +2,7 @@ import { describe, test, expect } from "bun:test";
 import { join } from "node:path";
 import { serveStatic } from "../static.ts";
 
-const PUBLIC_DIR = join(import.meta.dir, "../../../example/public");
+const PUBLIC_DIR = join(import.meta.dir, "../../../examples/dev/public");
 
 describe("serveStatic", () => {
   test("serves a file that exists", async () => {

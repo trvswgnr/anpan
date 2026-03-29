@@ -1,7 +1,11 @@
 import { join, resolve } from "node:path";
 import { stableId, scanIslandFiles } from "./index.ts";
-import type { IslandManifest, IslandMeta } from "./types.ts";
+import type { IslandManifest, IslandMeta, JsxFrameworkAdapter } from "./types.ts";
 import { createIslandPlugin } from "./plugin.ts";
+import { REACT_ADAPTER, PREACT_ADAPTER } from "./builtin-adapters.ts";
+
+export { type JsxFrameworkAdapter } from "./types.ts";
+export { REACT_ADAPTER, PREACT_ADAPTER } from "./builtin-adapters.ts";
 
 export const ISLANDS_OUT_DIR = ".bun/islands";
 export const ISLANDS_SERVE_PATH = "/_islands";
@@ -18,12 +22,56 @@ export interface IslandBundleResult {
 }
 
 // ---------------------------------------------------------------------------
+// Framework detection from tsconfig.json
+// ---------------------------------------------------------------------------
+
+/** Which built-in framework (if any) is configured via tsconfig jsxImportSource. */
+export type BuiltInFramework = "react" | "preact" | null;
+
+/**
+ * Read `compilerOptions.jsxImportSource` from the nearest `tsconfig.json`
+ * and return the recognised built-in framework name, or `null`.
+ */
+export async function detectJsxFramework(cwd: string): Promise<BuiltInFramework> {
+  try {
+    const raw = await Bun.file(join(cwd, "tsconfig.json")).text();
+    const tsconfig = JSON.parse(raw) as { compilerOptions?: { jsxImportSource?: string } };
+    const src = tsconfig?.compilerOptions?.jsxImportSource ?? "";
+    if (src === "react" || src.startsWith("react-")) return "react";
+    if (src === "preact" || src.startsWith("preact/")) return "preact";
+  } catch {
+    // no tsconfig, parse error, or missing field — fall through
+  }
+  return null;
+}
+
+/**
+ * Resolve the effective `JsxFrameworkAdapter` for the current project.
+ *
+ * Resolution order:
+ *   1. Explicit `jsxFramework` on `ServerConfig` / `BuildConfig`.
+ *   2. Auto-detected React/Preact from `tsconfig.json`.
+ *   3. `null` → built-in mini-reconciler.
+ */
+export async function resolveJsxFramework(
+  explicitAdapter: JsxFrameworkAdapter | undefined | null,
+  cwd: string,
+): Promise<JsxFrameworkAdapter | null> {
+  if (explicitAdapter != null) return explicitAdapter;
+  const detected = await detectJsxFramework(cwd);
+  if (detected === "react") return REACT_ADAPTER;
+  if (detected === "preact") return PREACT_ADAPTER;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Build all island files using Bun.build()
 // ---------------------------------------------------------------------------
 
 export async function bundleIslands(
   rootDir: string,
   outDir = join(rootDir, ISLANDS_OUT_DIR),
+  adapter: JsxFrameworkAdapter | null = null,
 ): Promise<IslandBundleResult> {
   const files = await scanIslandFiles(rootDir);
   const runtimeEntry = join(import.meta.dir, "client-runtime.ts");
@@ -56,7 +104,7 @@ export async function bundleIslands(
     outdir: outDir,
     target: "browser",
     splitting: true,
-    plugins: [createIslandPlugin("browser")],
+    plugins: [createIslandPlugin("browser", { adapter })],
     minify: process.env.NODE_ENV === "production",
     naming: {
       entry: "[name]-[hash].js",

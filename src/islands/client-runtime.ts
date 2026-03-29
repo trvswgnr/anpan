@@ -170,7 +170,10 @@ function mount(
 // Hydration bootstrap — runs on DOMContentLoaded
 // ---------------------------------------------------------------------------
 
-type IslandModule = { default: (props: Record<string, unknown>) => VNode | null };
+type IslandModule = {
+  default?: (props: Record<string, unknown>) => VNode | null;
+  __islandMount?: (el: HTMLElement, props: Record<string, unknown>) => void;
+};
 
 async function hydrate(): Promise<void> {
   const placeholders = document.querySelectorAll<HTMLElement>("island-placeholder");
@@ -191,7 +194,11 @@ async function hydrate(): Promise<void> {
 
       try {
         const mod = await import(/* @vite-ignore */ bundleUrl) as IslandModule;
-        if (typeof mod.default === "function") {
+        if (typeof mod.__islandMount === "function") {
+          // Framework-specific mount (React, Preact, Solid, etc.)
+          mod.__islandMount(el, props);
+        } else if (typeof mod.default === "function") {
+          // Built-in mini-reconciler
           mount(mod.default, props, el);
         }
       } catch (err) {

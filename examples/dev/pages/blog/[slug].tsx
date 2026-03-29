@@ -1,5 +1,5 @@
-import { Head } from "../../../src/index.ts";
-import type { PageProps } from "../../../src/index.ts";
+import { Head } from "../../../../src/index.ts";
+import type { PageProps } from "../../../../src/index.ts";
 
 export default function BlogPost({ params }: PageProps) {
   const { slug } = params;

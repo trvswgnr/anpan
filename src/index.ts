@@ -12,6 +12,9 @@ export { createDevServer } from "./dev/index.ts";
 export { build } from "./build/index.ts";
 export type { BuildConfig } from "./build/index.ts";
 
+// JSX framework adapter (for custom island frameworks)
+export type { JsxFrameworkAdapter } from "./islands/types.ts";
+
 // Routing types
 export type { Route, RouteMatch, RouteContext, Loader, LoaderReturn } from "./router/types.ts";
 

@@ -14,7 +14,7 @@
     "./jsx-dev-runtime": "./src/jsx/jsx-dev-runtime.ts"
   },
   "scripts": {
-    "dev": "bun run --hot example/main.ts",
+    "dev": "bun run --hot examples/dev/main.ts",
     "build": "bun run src/build/index.ts",
     "test": "bun test",
     "typecheck": "bun tsc --noEmit"

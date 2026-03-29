@@ -1,4 +1,4 @@
-import { Head } from "../../src/index.ts";
+import { Head } from "../../../src/index.ts";
 
 export default function AboutPage() {
   return (
