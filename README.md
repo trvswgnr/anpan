@@ -1,6 +1,6 @@
 # bun-web-framework
 
-A small SSR framework built on [Bun](https://bun.sh). No React. No Node.js. Pages are TSX files, all rendering happens on the server, and interactive pieces are hydrated in the browser as islands.
+A small SSR framework built on [Bun](https://bun.sh). Pages are TSX files, all rendering happens on the server, and interactive pieces are hydrated in the browser as islands. Ships its own minimal JSX runtime — no React required. React and Preact are also supported as first-class island adapters via auto-detection.
 
 ## Requirements
 
@@ -390,6 +390,62 @@ const [value, setValue] = useState(initialValue);
 
 On the server, `useState` returns `[initialValue, noopSetter]` so the static snapshot always matches the initial state. In the browser it manages local state and triggers re-renders.
 
+### Using React or Preact
+
+If `jsxImportSource` in `tsconfig.json` is `"react"` or `"preact"`, the framework auto-detects it and uses the framework's own `renderToString` on the server and `createRoot` / `render` in the browser. No extra config needed.
+
+**React**
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}
+```
+
+Island components are plain React components. Install `react`, `react-dom`, and `@types/react` as dependencies. The framework handles server rendering and hydration automatically.
+
+```tsx
+// components/Counter.island.tsx — works with React hooks
+import { useState } from "react";
+
+export default function Counter({ initial = 0 }: { initial?: number }) {
+  const [count, setCount] = useState(initial);
+  return (
+    <div>
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <span>{count}</span>
+      <button onClick={() => setCount(count + 1)}>+</button>
+    </div>
+  );
+}
+```
+
+**Preact**
+
+Same as React — set `"jsxImportSource": "preact"` and install `preact`.
+
+### Custom JSX framework
+
+For any other framework (Solid.js, etc.), pass a `jsxFramework` adapter to `createServer()`:
+
+```ts
+import { renderToString } from "solid-js/web";
+
+createServer({
+  jsxFramework: {
+    serverRender: (comp, props) => renderToString(() => (comp as any)(props)),
+    clientMountSnippet:
+      `import{render as __sr__}from"solid-js/web";` +
+      `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+  },
+});
+```
+
+The `clientMountSnippet` is appended to each island bundle. `__COMP__` is replaced with the actual component identifier. It must export a named function `__islandMount(el, props)` that mounts the component into `el`.
+
 ### Constraints
 
 **Props must be JSON-serializable.** Island props are serialized to JSON and embedded in the HTML so the browser can reconstruct them. Functions, class instances, `undefined`, and circular references will be silently dropped.
@@ -525,13 +581,14 @@ export default function ErrorPage() {
 
 ```ts
 interface ServerConfig {
-  pagesDir?: string;       // default: "./src/pages"
-  srcDir?: string;         // default: parent of pagesDir
-  publicDir?: string;      // default: "./public"
-  port?: number;           // default: 3000
-  hostname?: string;       // default: "0.0.0.0"
+  pagesDir?: string;             // default: "./src/pages"
+  srcDir?: string;               // default: parent of pagesDir
+  publicDir?: string;            // default: "./public"
+  port?: number;                 // default: 3000
+  hostname?: string;             // default: "0.0.0.0"
   middleware?: Middleware[];
-  dev?: boolean;           // default: NODE_ENV !== "production"
+  dev?: boolean;                 // default: NODE_ENV !== "production"
+  jsxFramework?: JsxFrameworkAdapter; // React/Preact auto-detected; supply for other frameworks
 }
 ```
 
@@ -609,7 +666,7 @@ This is invisible to page authors — it happens automatically for all pages.
 
 ## JSX
 
-The framework ships its own JSX runtime. No React, no Preact. Set `jsxImportSource` in `tsconfig.json` and TSX just works.
+The framework ships its own minimal JSX runtime. Set `jsxImportSource` to `"bun-web-framework"` and TSX just works — no React required. To use React or Preact as the island renderer, set `jsxImportSource` to `"react"` or `"preact"` instead (see [Using React or Preact](#using-react-or-preact)).
 
 ```json
 {
@@ -683,9 +740,27 @@ Returns `{ headers: { "Cache-Control": "public, max-age=N, stale-while-revalidat
 return { data, ...cacheFor(300) };
 ```
 
+### `JsxFrameworkAdapter`
+
+Interface for plugging in a custom JSX framework for islands. Pass an instance to `createServer({ jsxFramework: ... })`.
+
+```ts
+interface JsxFrameworkAdapter {
+  /** Render component(props) to an HTML string on the server. */
+  serverRender: (component: unknown, props: Record<string, unknown>) => string;
+  /**
+   * JS snippet appended to each island bundle. Must export __islandMount(el, props).
+   * Use __COMP__ as a placeholder for the component identifier.
+   */
+  clientMountSnippet: string;
+}
+```
+
+React and Preact adapters are built-in and selected automatically from `jsxImportSource` in `tsconfig.json`.
+
 ### `useState(initialValue)`
 
-Minimal state hook for island components. On the server returns `[initialValue, noop]`. In the browser manages local state and triggers re-renders.
+Minimal state hook for island components. On the server returns `[initialValue, noop]`. In the browser manages local state and triggers re-renders. When using React or Preact islands, use those frameworks' own `useState` instead.
 
 ### Types
 
@@ -716,6 +791,12 @@ type Loader<TData = unknown, TParams = Record<string, string>> =
 type LoaderReturn<TData = unknown> =
   | Response
   | { data: TData; status?: number; headers?: Record<string, string> };
+
+// Adapter for plugging in a custom JSX framework for islands
+interface JsxFrameworkAdapter {
+  serverRender: (component: unknown, props: Record<string, unknown>) => string;
+  clientMountSnippet: string;
+}
 
 // API route handler
 type ApiHandler = (
