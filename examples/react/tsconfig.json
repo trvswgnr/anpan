@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsxImportSource": "react",
+    "paths": {
+      "bun-web-framework": ["../../src/index.ts"],
+      "bun-web-framework/islands": ["../../src/islands/index.ts"],
+      "bun-web-framework/jsx-runtime": ["../../src/jsx/jsx-runtime.ts"],
+      "bun-web-framework/jsx-dev-runtime": ["../../src/jsx/jsx-dev-runtime.ts"]
+    }
+  },
+  "include": ["pages/**/*", "components/**/*", "main.ts"]
+}

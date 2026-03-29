@@ -1,0 +1,15 @@
+{
+  "name": "example-solidjs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot main.ts",
+    "start": "NODE_ENV=production bun run main.ts"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.0"
+  },
+  "notes": {
+    "jsxTransform": "SolidJS requires a JSX transform plugin. Install and configure 'bun-plugin-solid' or use Vite with 'vite-plugin-solid'. Without the transform, JSX compiles to standard createElement calls instead of SolidJS reactive primitives."
+  }
+}

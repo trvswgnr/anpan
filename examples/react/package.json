@@ -1,0 +1,17 @@
+{
+  "name": "example-react",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot main.ts",
+    "start": "NODE_ENV=production bun run main.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0"
+  }
+}
