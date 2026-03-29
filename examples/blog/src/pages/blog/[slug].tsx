@@ -1,4 +1,4 @@
-import { Head, notFound } from "bun-web-framework";
+import { Head, notFound, cacheFor } from "bun-web-framework";
 import type { PageProps, Loader } from "bun-web-framework";
 import type { RouteContext } from "bun-web-framework";
 import { getPost, likes, type Post } from "../../data/posts";
@@ -10,7 +10,7 @@ type Data = { post: Post; likeCount: number };
 export const loader: Loader<Data, Params> = async ({ params }: RouteContext<Params>) => {
   const post = getPost(params.slug);
   if (!post) return notFound();
-  return { data: { post, likeCount: likes[post.slug] ?? 0 } };
+  return { data: { post, likeCount: likes[post.slug] ?? 0 }, ...cacheFor(60) };
 };
 
 export default function BlogPostPage({ data, params }: PageProps<typeof loader, Params>) {

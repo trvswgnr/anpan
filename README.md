@@ -266,36 +266,48 @@ Allowed status codes: `301`, `302`, `307`, `308`.
 
 ### Caching
 
-**HTTP caching** — use the `headers` field to set `Cache-Control` on the rendered page. A CDN or browser will cache it according to the directive.
+**HTTP caching** — `cacheFor(seconds)` returns `Cache-Control` headers that spread directly into a loader return value.
 
 ```ts
+import { notFound, cacheFor } from "bun-web-framework";
+
 export const loader: Loader = async ({ params }) => {
   const post = getPost(params.slug);
   if (!post) return notFound();
-  return {
-    data: { post },
-    headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=60" },
-  };
+  // Cache for 5 minutes; serve stale for up to 1 minute while revalidating.
+  return { data: { post }, ...cacheFor(300) };
 };
 ```
 
-**Server-side caching** — loaders are plain async functions, so you can cache results however you like. A module-level `Map` is the simplest option:
+**Server-side caching** — `cache(ttlMs, fn)` wraps any async function with an in-memory TTL cache. Results are keyed by the serialized arguments and expire after `ttlMs` milliseconds.
 
 ```ts
-const cache = new Map<string, Post>();
+import { cache, notFound } from "bun-web-framework";
+import type { Loader } from "bun-web-framework";
 
-export const loader: Loader = async ({ params }) => {
-  if (cache.has(params.slug)) {
-    return { data: { post: cache.get(params.slug)! } };
-  }
-  const post = await db.getPost(params.slug);
+// Declare once at module level — cache is shared across all requests.
+const getPost = cache(60_000, async (slug: string) => {
+  return await db.posts.findOne({ slug });
+});
+
+export const loader: Loader<{ post: Post }, { slug: string }> = async ({ params }) => {
+  const post = await getPost(params.slug); // DB hit once per minute per slug
   if (!post) return notFound();
-  cache.set(params.slug, post);
   return { data: { post } };
 };
 ```
 
-For TTL-based or distributed caching, drop in Redis, a KV store, or any caching library — the loader has no opinion.
+Combine both for a full caching strategy:
+
+```ts
+export const loader: Loader = async ({ params }) => {
+  const post = await getPost(params.slug);
+  if (!post) return notFound();
+  return { data: { post }, ...cacheFor(300) }; // server: 1 min, CDN: 5 min
+};
+```
+
+For distributed caching (Redis, KV), pass a function that uses it — `cache()` is just a wrapper around any async function.
 
 ## API routes
 
@@ -654,6 +666,22 @@ Returns a `Response` with status 404. When returned from a loader, the framework
 ### `redirect(url, status?)`
 
 Returns a redirect `Response`. Default status is `302`. Allowed: `301`, `302`, `307`, `308`.
+
+### `cache(ttlMs, fn)`
+
+Wraps an async function with an in-memory TTL cache. Arguments are serialized to JSON as the cache key. Declare at module level so the cache is shared across requests.
+
+```ts
+const getPosts = cache(30_000, async () => db.posts.findAll());
+```
+
+### `cacheFor(seconds)`
+
+Returns `{ headers: { "Cache-Control": "public, max-age=N, stale-while-revalidate=M" } }` for spreading into a loader return value.
+
+```ts
+return { data, ...cacheFor(300) };
+```
 
 ### `useState(initialValue)`
 

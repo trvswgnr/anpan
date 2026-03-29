@@ -15,8 +15,8 @@ export type { BuildConfig } from "./build/index.ts";
 // Routing types
 export type { Route, RouteMatch, RouteContext, Loader, LoaderReturn } from "./router/types.ts";
 
-// Response helpers
-export { notFound, redirect } from "./helpers.ts";
+// Response helpers and caching
+export { notFound, redirect, cache, cacheFor } from "./helpers.ts";
 
 // Renderer types
 export type { PageProps, LayoutProps, PageModule, LayoutModule } from "./renderer/index.ts";
