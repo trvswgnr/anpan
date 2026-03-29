@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 /**
  * Attempt to serve a static file from `publicDir`.
@@ -8,16 +8,17 @@ export async function serveStatic(
   publicDir: string,
   pathname: string,
 ): Promise<Response | null> {
-  // Prevent directory traversal
-  const safePath = pathname.replace(/\.\./g, "").replace(/\/+/g, "/");
-  const filePath = join(publicDir, safePath);
+  const root = resolve(publicDir);
+  // resolve() normalises `.` and `..` — if the result escapes root, reject it.
+  const filePath = resolve(join(root, pathname));
+  if (!filePath.startsWith(root + "/") && filePath !== root) return null;
 
   const file = Bun.file(filePath);
   if (!(await file.exists())) return null;
 
-  // Don't serve directories
-  const stat = await file.stat?.() ?? null;
-  if (stat && (stat as unknown as { isDirectory?: () => boolean }).isDirectory?.()) return null;
+  // Bun.file() on a directory returns a file that exists but has no body;
+  // reject paths that look like directories.
+  if (filePath.endsWith("/")) return null;
 
   return new Response(file, {
     headers: {

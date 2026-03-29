@@ -125,4 +125,19 @@ describe("static files", () => {
     // File exists — Bun returns 200 for non-empty files, 204 for empty ones
     expect([200, 204]).toContain(res.status);
   });
+
+  test("rejects path traversal via ..", async () => {
+    const res = await fetch(`${base}/../package.json`);
+    expect(res.status).toBe(404);
+  });
+
+  test("rejects encoded path traversal", async () => {
+    const res = await fetch(`${base}/%2e%2e/package.json`);
+    expect(res.status).toBe(404);
+  });
+
+  test("rejects double-encoded path traversal", async () => {
+    const res = await fetch(`${base}/%252e%252e/package.json`);
+    expect(res.status).toBe(404);
+  });
 });

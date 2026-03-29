@@ -1,5 +1,5 @@
 import type { ApiHandler } from "bun-web-framework";
-import { likes } from "../../data/posts";
+import { likes, getPost } from "../../data/posts";
 
 export const GET: ApiHandler = (_req, { params }) => {
   const slug = params.slug;
@@ -26,6 +26,10 @@ export const POST: ApiHandler = async (req, { params }) => {
 
   if (!slug) {
     return Response.json({ error: "Missing slug" }, { status: 400 });
+  }
+
+  if (!getPost(slug)) {
+    return Response.json({ error: "Post not found" }, { status: 404 });
   }
 
   likes[slug] = (likes[slug] ?? 0) + 1;

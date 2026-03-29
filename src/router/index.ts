@@ -157,7 +157,11 @@ function matchSegment(
 ): boolean {
   if (seg === undefined) return false;
   if (pat.startsWith(":")) {
-    params[pat.slice(1)] = decodeURIComponent(seg);
+    try {
+      params[pat.slice(1)] = decodeURIComponent(seg);
+    } catch {
+      return false; // malformed percent-encoding — reject this route match
+    }
     return true;
   }
   return pat === seg;

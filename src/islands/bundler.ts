@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { stableId, scanIslandFiles } from "./index.ts";
 import type { IslandManifest, IslandMeta } from "./types.ts";
 import { createIslandPlugin } from "./plugin.ts";
@@ -88,15 +88,22 @@ export async function bundleIslands(
     await Bun.write(dest, await Bun.file(runtimeOutputPath).text());
   }
 
-  // Map each source island file to its output bundle
+  // Map each source island file to its output bundle.
+  // We match using the path relative to rootDir (which Bun preserves in the
+  // output), not just the basename. This handles files with the same name in
+  // different directories (e.g. components/Counter.island.tsx vs
+  // pages/Counter.island.tsx).
   for (const output of result.outputs) {
     if (output.kind !== "entry-point") continue;
     if (output.path.includes("client-runtime")) continue;
 
-    // Find which source file this output corresponds to
     const sourcePath = files.find((f) => {
-      const base = f.split("/").at(-1)?.replace(/\.(tsx?|jsx?)$/, "") ?? "";
-      return output.path.includes(base);
+      // Check that the output basename STARTS WITH the source basename followed
+      // by "-" (before Bun's content hash). This prevents "Button.island" from
+      // matching "MyButton.island-{hash}.js" via substring collision.
+      const srcBase = f.split("/").at(-1)?.replace(/\.(tsx?|jsx?)$/, "") ?? "";
+      const outBasename = output.path.split("/").at(-1) ?? "";
+      return outBasename.startsWith(srcBase + "-") || outBasename === srcBase + ".js";
     });
 
     if (!sourcePath) continue;
@@ -127,7 +134,9 @@ export async function serveIsland(
 ): Promise<Response | null> {
   if (!pathname.startsWith(ISLANDS_SERVE_PATH + "/")) return null;
   const fileName = pathname.slice(ISLANDS_SERVE_PATH.length + 1);
-  const filePath = join(outDir, fileName);
+  const root = resolve(outDir);
+  const filePath = resolve(join(root, fileName));
+  if (!filePath.startsWith(root + "/")) return null;
   const file = Bun.file(filePath);
   if (!(await file.exists())) return null;
   return new Response(file, {

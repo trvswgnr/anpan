@@ -186,6 +186,8 @@ export type ApiHandler = (
   ctx: { params: Record<string, string> },
 ) => Response | Promise<Response>;
 
+const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
+
 async function handleApiRoute(
   req: Request,
   filePath: string,
@@ -193,12 +195,17 @@ async function handleApiRoute(
 ): Promise<Response> {
   const mod = await import(filePath) as Record<string, ApiHandler | undefined>;
   const method = req.method.toUpperCase();
-  const handler = mod[method] ?? mod["default"];
+
+  // Only look up known HTTP verbs to prevent prototype-chain access.
+  const handler = HTTP_METHODS.has(method)
+    ? (mod[method] ?? mod["default"])
+    : mod["default"];
 
   if (!handler) {
+    const allowed = Object.keys(mod).filter((k) => HTTP_METHODS.has(k)).join(", ");
     return new Response(`Method ${method} not allowed`, {
       status: 405,
-      headers: { Allow: Object.keys(mod).join(", ") },
+      headers: { Allow: allowed || "GET" },
     });
   }
 
