@@ -12,7 +12,7 @@ const server = await createDevServer({
   pagesDir: "./examples/dev/pages",
   publicDir: "./examples/dev/public",
   middleware: [logger],
-  port: 3000,
+  port: parseInt(process.env.PORT ?? "3000"),
 });
 
 console.log(`Running at ${server.url}`);

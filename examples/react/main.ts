@@ -11,8 +11,8 @@
 import { createServer } from "../../src/index.ts";
 
 const server = await createServer({
-  pagesDir: "./examples/react/pages",
-  port: 3002,
+  pagesDir: "./pages",
+  port: parseInt(process.env.PORT ?? "3002"),
 });
 
 console.log(`React example running at ${server.url}`);

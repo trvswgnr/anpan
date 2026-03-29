@@ -45,8 +45,8 @@ const solidAdapter: JsxFrameworkAdapter = {
 };
 
 const server = await createServer({
-  pagesDir: "./examples/solidjs/pages",
-  port: 3004,
+  pagesDir: "./pages",
+  port: parseInt(process.env.PORT ?? "3004"),
   jsxFramework: solidAdapter,
 });
 

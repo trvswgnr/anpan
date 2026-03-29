@@ -11,8 +11,8 @@
 import { createServer } from "../../src/index.ts";
 
 const server = await createServer({
-  pagesDir: "./examples/preact/pages",
-  port: 3003,
+  pagesDir: "./pages",
+  port: parseInt(process.env.PORT ?? "3003"),
 });
 
 console.log(`Preact example running at ${server.url}`);
