@@ -2,3 +2,4 @@ node_modules/
 .bun/
 dist/
 *.js.map
+.DS_Store
