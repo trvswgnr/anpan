@@ -1,5 +1,5 @@
 node_modules/
-.bun/
+.anpan/
 dist/
 *.js.map
 .DS_Store

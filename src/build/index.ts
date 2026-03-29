@@ -1,11 +1,11 @@
 import { join } from "node:path";
-import { bundleIslands, resolveJsxFramework } from "../islands/bundler.ts";
+import { ANPAN_DIR, bundleIslands, resolveJsxFramework } from "../islands/bundler.ts";
 import type { JsxFrameworkAdapter } from "../islands/bundler.ts";
 
 export interface BuildConfig {
   /** Input pages directory */
   pagesDir?: string;
-  /** Output directory for island bundles. Default: ".bun" (islands written to .bun/islands/) */
+  /** Output directory for island bundles. Default: ".anpan" (islands written to .anpan/islands/) */
   outDir?: string;
   /**
    * Custom JSX framework adapter for islands.
@@ -16,7 +16,7 @@ export interface BuildConfig {
 
 export async function build(config: BuildConfig = {}): Promise<void> {
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
-  const outDir = resolve(config.outDir ?? ".bun");
+  const outDir = resolve(config.outDir ?? ANPAN_DIR);
   const islandOutDir = join(outDir, "islands");
 
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());

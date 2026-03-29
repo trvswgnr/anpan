@@ -623,7 +623,7 @@ Before deploying, pre-build the island bundles:
 bun run build
 ```
 
-This bundles all island components for the browser and writes output to `.bun/islands/` (the same directory the server uses at runtime). You can also call it from code:
+This bundles all island components for the browser and writes output to `.anpan/islands/` (the same directory the server uses at runtime). You can also call it from code:
 
 ```ts
 import { build } from "anpan";
@@ -640,7 +640,7 @@ The server runs TypeScript directly — no separate compilation step. The minima
 ```
 src/           # your application source
 public/        # static assets
-.bun/islands/  # built island bundles (from `bun run build`)
+.anpan/islands/  # built island bundles (from `bun run build`)
 package.json
 ```
 
@@ -653,11 +653,11 @@ COPY package.json bun.lock ./
 RUN bun install --production
 COPY src/ src/
 COPY public/ public/
-COPY .bun/ .bun/
+COPY .anpan/ .anpan/
 CMD ["bun", "run", "src/main.ts"]
 ```
 
-Run `bun run build` as part of your CI pipeline before building the Docker image so that `.bun/islands/` is present.
+Run `bun run build` as part of your CI pipeline before building the Docker image so that `.anpan/islands/` is present.
 
 ## Streaming
 
@@ -739,12 +739,12 @@ Same as `createServer` but enables file watching and browser hot reload via SSE.
 
 ### `build(config?)`
 
-Bundles island components for production. Writes output to `.bun/islands/` by default.
+Bundles island components for production. Writes output to `.anpan/islands/` by default.
 
 ```ts
 interface BuildConfig {
   pagesDir?: string;          // default: "./src/pages"
-  outDir?: string;            // default: ".bun" (islands written to .bun/islands/)
+  outDir?: string;            // default: ".anpan" (islands written to .anpan/islands/)
   jsxFramework?: JsxFrameworkAdapter;
 }
 ```

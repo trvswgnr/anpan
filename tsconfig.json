@@ -20,5 +20,5 @@
     }
   },
   "include": ["src/**/*", "examples/dev/**/*"],
-  "exclude": ["node_modules", ".bun", "dist"]
+  "exclude": ["node_modules", ".anpan", "dist"]
 }

@@ -7,7 +7,9 @@ import { REACT_ADAPTER, PREACT_ADAPTER } from "./builtin-adapters.ts";
 export { type JsxFrameworkAdapter } from "./types.ts";
 export { REACT_ADAPTER, PREACT_ADAPTER } from "./builtin-adapters.ts";
 
-export const ISLANDS_OUT_DIR = ".bun/islands";
+/** Default root for framework output (island bundles, manifest) under the app cwd. */
+export const ANPAN_DIR = ".anpan";
+export const ISLANDS_OUT_DIR = join(ANPAN_DIR, "islands");
 export const ISLANDS_SERVE_PATH = "/_islands";
 export const RUNTIME_BUNDLE = "__runtime.js";
 
