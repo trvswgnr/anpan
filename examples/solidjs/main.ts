@@ -1,5 +1,5 @@
 /**
- * SolidJS example for bun-web-framework.
+ * SolidJS example for anpan.
  *
  * SolidJS is NOT auto-detected from tsconfig.json (only React and Preact are
  * built-in). You must supply an explicit `jsxFramework` adapter with:

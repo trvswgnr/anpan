@@ -1,4 +1,4 @@
-import type { LayoutProps } from "bun-web-framework";
+import type { LayoutProps } from "anpan";
 import ThemeToggle from "../components/ThemeToggle.island";
 
 export default function RootLayout({ children, url }: LayoutProps) {
@@ -39,7 +39,7 @@ export default function RootLayout({ children, url }: LayoutProps) {
 
         <footer class="site-footer">
           <div class="container">
-            <p>Built with bun-web-framework. No React needed.</p>
+            <p>Built with anpan. No React needed.</p>
           </div>
         </footer>
       </body>

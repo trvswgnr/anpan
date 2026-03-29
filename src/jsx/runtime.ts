@@ -10,7 +10,7 @@ export const FRAGMENT = Symbol("Fragment");
  * Create a virtual DOM node. This is the JSX factory function.
  *
  * You rarely call this directly. TSX compiles `<div>` to `h("div", ...)` for
- * you when `jsxImportSource` is set to `"bun-web-framework"` in tsconfig.
+ * you when `jsxImportSource` is set to `"anpan"` in tsconfig.
  */
 export function h(
   type: string | ComponentType | symbol,

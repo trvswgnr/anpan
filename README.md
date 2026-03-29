@@ -1,4 +1,4 @@
-# bun-web-framework
+# anpan
 
 A small SSR framework built on [Bun](https://bun.sh). Pages are TSX files, all rendering happens on the server, and interactive pieces are hydrated in the browser as islands. Ships its own minimal JSX runtime — no React required. React and Preact are also supported as first-class island adapters via auto-detection.
 
@@ -9,7 +9,7 @@ A small SSR framework built on [Bun](https://bun.sh). Pages are TSX files, all r
 ## Install
 
 ```sh
-bun add bun-web-framework
+bun add anpan
 ```
 
 ## Quick start
@@ -41,7 +41,7 @@ my-app/
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "bun-web-framework"
+    "jsxImportSource": "anpan"
   }
 }
 ```
@@ -49,7 +49,7 @@ my-app/
 **src/main.ts**
 
 ```ts
-import { createServer } from "bun-web-framework";
+import { createServer } from "anpan";
 
 const server = await createServer({
   pagesDir: "./src/pages",
@@ -63,8 +63,8 @@ console.log(`http://localhost:${server.port}`);
 **src/pages/index.tsx**
 
 ```tsx
-import { Head } from "bun-web-framework";
-import type { PageProps } from "bun-web-framework";
+import { Head } from "anpan";
+import type { PageProps } from "anpan";
 
 export default function HomePage({ url }: PageProps) {
   return (
@@ -99,7 +99,7 @@ Every `.tsx` or `.ts` file inside `pagesDir` becomes a route.
 A page exports a default function that receives `PageProps` and returns JSX.
 
 ```tsx
-import type { PageProps } from "bun-web-framework";
+import type { PageProps } from "anpan";
 
 export default function BlogPost({ params }: PageProps) {
   return <article><h1>{params.slug}</h1></article>;
@@ -167,7 +167,7 @@ export const loader: Loader = async ({ req }) => {
 A file named `_layout.tsx` wraps all pages in the same directory and below.
 
 ```tsx
-import type { LayoutProps } from "bun-web-framework";
+import type { LayoutProps } from "anpan";
 
 export default function RootLayout({ children }: LayoutProps) {
   return (
@@ -193,7 +193,7 @@ Islands placed inside a layout (nav, sidebar, etc.) are bundled and hydrated the
 Use `<Head>` to set `<title>`, `<meta>`, and any other head elements from inside a page component. The content is collected during rendering and injected into the document `<head>` automatically.
 
 ```tsx
-import { Head } from "bun-web-framework";
+import { Head } from "anpan";
 
 export default function Page() {
   return (
@@ -221,8 +221,8 @@ Rules:
 A page can export a `loader` function. The loader runs on the server before the page component renders. Use it to fetch data, check auth, redirect, or return a 404.
 
 ```ts
-import { notFound, redirect } from "bun-web-framework";
-import type { Loader } from "bun-web-framework";
+import { notFound, redirect } from "anpan";
+import type { Loader } from "anpan";
 
 export const loader: Loader = async ({ params, req }) => {
   const session = getSession(req);
@@ -269,7 +269,7 @@ Allowed status codes: `301`, `302`, `307`, `308`.
 **HTTP caching** — `cacheFor(seconds)` returns `Cache-Control` headers that spread directly into a loader return value.
 
 ```ts
-import { notFound, cacheFor } from "bun-web-framework";
+import { notFound, cacheFor } from "anpan";
 
 export const loader: Loader = async ({ params }) => {
   const post = getPost(params.slug);
@@ -282,8 +282,8 @@ export const loader: Loader = async ({ params }) => {
 **Server-side caching** — `cache(ttlMs, fn)` wraps any async function with an in-memory TTL cache. Results are keyed by the serialized arguments and expire after `ttlMs` milliseconds.
 
 ```ts
-import { cache, notFound } from "bun-web-framework";
-import type { Loader } from "bun-web-framework";
+import { cache, notFound } from "anpan";
+import type { Loader } from "anpan";
 
 // Declare once at module level — cache is shared across all requests.
 const getPost = cache(60_000, async (slug: string) => {
@@ -315,7 +315,7 @@ Any file whose path contains `/api/` (e.g. `pages/api/users.ts`) is treated as a
 
 ```ts
 // pages/api/users.ts
-import type { ApiHandler } from "bun-web-framework";
+import type { ApiHandler } from "anpan";
 
 export const GET: ApiHandler = (_req, { params }) => {
   return Response.json({ users: [] });
@@ -341,7 +341,7 @@ Name the file `*.island.tsx` and export a default function.
 
 ```tsx
 // components/Counter.island.tsx
-import { useState } from "bun-web-framework/islands";
+import { useState } from "anpan/islands";
 
 export default function Counter({ initial = 0 }: { initial?: number }) {
   const [count, setCount] = useState(initial);
@@ -502,7 +502,7 @@ createServer({ pagesDir: "./src/pages", srcDir: "./src" });
 Middleware runs before every route handler. It follows the onion model: each function receives the request and a `next` function to call the next layer.
 
 ```ts
-import type { Middleware } from "bun-web-framework";
+import type { Middleware } from "anpan";
 
 const logger: Middleware = async (req, next) => {
   const start = Date.now();
@@ -545,8 +545,8 @@ Rendered when no route matches, or when a loader returns `notFound()`. Receives 
 
 ```tsx
 // pages/_404.tsx
-import type { PageProps } from "bun-web-framework";
-import { Head } from "bun-web-framework";
+import type { PageProps } from "anpan";
+import { Head } from "anpan";
 
 export default function NotFound({ url }: PageProps) {
   return (
@@ -566,7 +566,7 @@ Rendered when an unhandled exception reaches the top-level handler. In developme
 
 ```tsx
 // pages/_error.tsx
-import { Head } from "bun-web-framework";
+import { Head } from "anpan";
 
 export default function ErrorPage() {
   return (
@@ -599,7 +599,7 @@ interface ServerConfig {
 For development, use `createDevServer`. It watches `pagesDir` for file changes and automatically reloads connected browsers via a Server-Sent Events channel at `/__dev/reload`.
 
 ```ts
-import { createDevServer } from "bun-web-framework";
+import { createDevServer } from "anpan";
 
 const server = await createDevServer({
   pagesDir: "./src/pages",
@@ -626,7 +626,7 @@ bun run build
 This bundles all island components for the browser and writes output to `.bun/islands/` (the same directory the server uses at runtime). You can also call it from code:
 
 ```ts
-import { build } from "bun-web-framework";
+import { build } from "anpan";
 
 await build({
   pagesDir: "./src/pages",
@@ -667,13 +667,13 @@ This is invisible to page authors — it happens automatically for all pages.
 
 ## JSX
 
-The framework ships its own minimal JSX runtime. Set `jsxImportSource` to `"bun-web-framework"` and TSX just works — no React required. To use React or Preact as the island renderer, set `jsxImportSource` to `"react"` or `"preact"` instead (see [Using React or Preact](#using-react-or-preact)).
+The framework ships its own minimal JSX runtime. Set `jsxImportSource` to `"anpan"` and TSX just works — no React required. To use React or Preact as the island renderer, set `jsxImportSource` to `"react"` or `"preact"` instead (see [Using React or Preact](#using-react-or-preact)).
 
 ```json
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "bun-web-framework"
+    "jsxImportSource": "anpan"
   }
 }
 ```
@@ -782,7 +782,7 @@ return { data, ...cacheFor(300) };
 JSX element factory. Creates a `VNode`. Normally called implicitly by the JSX transform, but can be used directly.
 
 ```ts
-import { h } from "bun-web-framework";
+import { h } from "anpan";
 
 const node = h("div", { className: "box" }, h("p", null, "Hello"));
 ```
@@ -796,7 +796,7 @@ Symbol used for JSX fragments (`<>...</>`). Normally used implicitly by the JSX 
 Synchronously renders a `VNode` tree to an HTML string. Handles components, fragments, HTML escaping, void elements, boolean attributes, and `className`/`htmlFor` mapping.
 
 ```ts
-import { h, renderToString } from "bun-web-framework";
+import { h, renderToString } from "anpan";
 
 const html = renderToString(h("h1", null, "Hello"));
 // => "<h1>Hello</h1>"

@@ -1,5 +1,5 @@
 {
-  "name": "bun-web-framework",
+  "name": "anpan",
   "version": "0.1.0",
   "description": "A lightweight Bun-native SSR framework with TSX templating and islands architecture",
   "type": "module",

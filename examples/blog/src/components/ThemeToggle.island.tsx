@@ -1,4 +1,4 @@
-import { useState } from "bun-web-framework/islands";
+import { useState } from "anpan/islands";
 
 export default function ThemeToggle(_props: Record<string, never>) {
   const [dark, setDark] = useState(false);

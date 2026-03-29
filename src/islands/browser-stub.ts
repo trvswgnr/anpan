@@ -1,4 +1,4 @@
-// Browser-side stub for "bun-web-framework/islands".
+// Browser-side stub for "anpan/islands".
 // Resolved when Bun.build() uses target: "browser" or the "browser" condition.
 //
 // island() is an identity function in the browser — the component is used

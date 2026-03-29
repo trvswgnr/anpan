@@ -7,6 +7,6 @@
     "start": "bun run main.ts"
   },
   "dependencies": {
-    "bun-web-framework": "../../"
+    "anpan": "../../"
   }
 }

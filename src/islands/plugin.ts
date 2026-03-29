@@ -15,7 +15,7 @@ import { getBuiltinFramework } from "./builtin-adapters.ts";
 //
 //   The plugin rewrites this to:
 //     function Counter({ initial = 0 }) { ... }
-//     import { island as __i__ } from "bun-web-framework/islands";
+//     import { island as __i__ } from "anpan/islands";
 //     export default __i__(Counter, "/abs/path/to/Counter.island.tsx");
 //
 //   For React/Preact (built-in adapters), the render option is also injected:
@@ -27,7 +27,7 @@ import { getBuiltinFramework } from "./builtin-adapters.ts";
 //   global _serverAdapter set via setServerAdapter() at startup.
 //
 // Browser mode (passed to Bun.build() plugins):
-//   Rewrites "bun-web-framework/islands" imports to point directly at
+//   Rewrites "anpan/islands" imports to point directly at
 //   client-runtime.ts so that:
 //     a) useState is the reactive browser version (not the server noop)
 //     b) the node:crypto / node:async_hooks server code is never bundled
@@ -43,7 +43,7 @@ export interface IslandPluginOptions {
 }
 
 const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
-const ISLANDS_IMPORT_RE = /from\s+["']bun-web-framework\/islands["']/g;
+const ISLANDS_IMPORT_RE = /from\s+["']anpan\/islands["']/g;
 
 export function createIslandPlugin(
   mode: "server" | "browser" = "server",
@@ -51,7 +51,7 @@ export function createIslandPlugin(
 ): BunPlugin {
   const adapter = options.adapter ?? null;
   return {
-    name: "bun-web-framework:auto-island",
+    name: "anpan:auto-island",
     setup(build) {
       build.onLoad({ filter: /\.island\.(tsx?|jsx?)$/ }, async (args) => {
         const source = await Bun.file(args.path).text();
@@ -171,7 +171,7 @@ function autoWrap(source: string, filePath: string): string {
       "$1",
     );
     return (
-      `import{island as __i__}from"bun-web-framework/islands";\n` +
+      `import{island as __i__}from"anpan/islands";\n` +
       modified +
       `\nexport default __i__(${name},${escaped});`
     );
@@ -184,7 +184,7 @@ function autoWrap(source: string, filePath: string): string {
     const name = defaultIdMatch[1]!;
     const modified = source.replace(/\nexport\s+default\s+\w+\s*;?\s*$/, "");
     return (
-      `import{island as __i__}from"bun-web-framework/islands";\n` +
+      `import{island as __i__}from"anpan/islands";\n` +
       modified +
       `\nexport default __i__(${name},${escaped});`
     );
@@ -198,7 +198,7 @@ function autoWrap(source: string, filePath: string): string {
   if (defaultExprMatch) {
     const modified = source.replace(/export\s+default\s+/, "const __comp__ = ");
     return (
-      `import{island as __i__}from"bun-web-framework/islands";\n` +
+      `import{island as __i__}from"anpan/islands";\n` +
       modified +
       `\nexport default __i__(__comp__,${escaped});`
     );
@@ -214,12 +214,12 @@ function autoWrap(source: string, filePath: string): string {
  * snapshot uses the correct renderToString.
  *
  * Input (from autoWrap):
- *   import{island as __i__}from"bun-web-framework/islands";
+ *   import{island as __i__}from"anpan/islands";
  *   function Counter(...) { ... }
  *   export default __i__(Counter,"/path/Counter.island.tsx");
  *
  * Output (React):
- *   import{island as __i__}from"bun-web-framework/islands";
+ *   import{island as __i__}from"anpan/islands";
  *   import{createElement as __ce__}from"react";
  *   import{renderToString as __rts__}from"react-dom/server";
  *   function Counter(...) { ... }
@@ -259,9 +259,9 @@ function injectServerRender(
   const newCall = `export default __i__(${name},${escaped},{render:(p)=>${renderExpr}});`;
   const rewritten = wrapped.replace(callRe, newCall);
 
-  // Insert framework imports after the bun-web-framework/islands import
+  // Insert framework imports after the anpan/islands import
   return rewritten.replace(
-    /^(import\{island as __i__\}from"bun-web-framework\/islands";\n)/,
+    /^(import\{island as __i__\}from"anpan\/islands";\n)/,
     `$1${imports}`,
   );
 }

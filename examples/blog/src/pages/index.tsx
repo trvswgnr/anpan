@@ -1,5 +1,5 @@
-import { Head } from "bun-web-framework";
-import type { PageProps } from "bun-web-framework";
+import { Head } from "anpan";
+import type { PageProps } from "anpan";
 import { getRecentPosts } from "../data/posts";
 
 export default function HomePage(_props: PageProps) {
@@ -9,7 +9,7 @@ export default function HomePage(_props: PageProps) {
     <>
       <Head>
         <title>Bun Blog — A framework demo</title>
-        <meta name="description" content="A demo blog built with bun-web-framework." />
+        <meta name="description" content="A demo blog built with anpan." />
       </Head>
 
       <section class="hero">

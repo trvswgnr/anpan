@@ -5,6 +5,7 @@
  * browser, and verify that islands actually become interactive.
  *
  * Run with: bun test src/islands/__tests__/hydration.browser.test.ts
+ * (beforeAll runs `bunx playwright install chromium` from the repo root; idempotent when already installed)
  */
 
 import { test, expect, beforeAll, afterAll, describe, setDefaultTimeout } from "bun:test";
@@ -13,16 +14,33 @@ setDefaultTimeout(30_000);
 import { chromium, type Browser, type Page } from "playwright";
 import { join } from "node:path";
 
-const BLOG_PAGES = join(import.meta.dir, "../../../examples/blog/src/pages");
-const BLOG_PUBLIC = join(import.meta.dir, "../../../examples/blog/public");
-const BLOG_SRC = join(import.meta.dir, "../../../examples/blog/src");
+const REPO_ROOT = join(import.meta.dir, "../../..");
+const BLOG_PAGES = join(REPO_ROOT, "examples/blog/src/pages");
+const BLOG_PUBLIC = join(REPO_ROOT, "examples/blog/public");
+const BLOG_SRC = join(REPO_ROOT, "examples/blog/src");
 
 let browser: Browser;
 let server: ReturnType<typeof Bun.serve>;
 let base: string;
 
+function ensurePlaywrightChromium(): void {
+  const result = Bun.spawnSync({
+    cmd: ["bun", "x", "playwright", "install", "chromium"],
+    cwd: REPO_ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (result.exitCode !== 0) {
+    throw new Error(
+      `playwright install chromium failed (exit ${result.exitCode}). Run from repo root: bunx playwright install chromium`,
+    );
+  }
+}
+
 beforeAll(async () => {
-  const { createServer } = await import("bun-web-framework");
+  ensurePlaywrightChromium();
+
+  const { createServer } = await import("anpan");
 
   server = await createServer({
     pagesDir: BLOG_PAGES,

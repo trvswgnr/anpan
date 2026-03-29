@@ -1,6 +1,6 @@
-import { Head, notFound, cacheFor } from "bun-web-framework";
-import type { PageProps, Loader } from "bun-web-framework";
-import type { RouteContext } from "bun-web-framework";
+import { Head, notFound, cacheFor } from "anpan";
+import type { PageProps, Loader } from "anpan";
+import type { RouteContext } from "anpan";
 import { getPost, likes, type Post } from "../../data/posts";
 import LikeButton from "../../components/LikeButton.island";
 

@@ -38,7 +38,7 @@ describe("GET /", () => {
 
   test("contains page content", async () => {
     const html = await fetch(`${base}/`).then((r) => r.text());
-    expect(html).toContain("bun-web-framework");
+    expect(html).toContain("anpan");
   });
 });
 

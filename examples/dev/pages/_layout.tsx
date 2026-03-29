@@ -23,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps) {
         <main>{children}</main>
         <hr />
         <footer>
-          <small>Powered by bun-web-framework</small>
+          <small>Powered by anpan</small>
         </footer>
       </body>
     </html>

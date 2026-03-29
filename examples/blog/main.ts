@@ -1,4 +1,4 @@
-import { createServer } from "bun-web-framework";
+import { createServer } from "anpan";
 
 const server = await createServer({
   pagesDir: "./src/pages",

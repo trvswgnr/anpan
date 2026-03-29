@@ -1,4 +1,4 @@
-import { Head } from "bun-web-framework";
+import { Head } from "anpan";
 
 export default function NotFoundPage() {
   return (

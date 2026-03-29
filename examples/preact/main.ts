@@ -1,5 +1,5 @@
 /**
- * Preact example for bun-web-framework.
+ * Preact example for anpan.
  *
  * Because this project's tsconfig.json sets `jsxImportSource: "preact"`, the
  * framework auto-detects Preact and uses it for island server-rendering and

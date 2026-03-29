@@ -1,4 +1,4 @@
-import type { ApiHandler } from "bun-web-framework";
+import type { ApiHandler } from "anpan";
 import { likes, getPost } from "../../data/posts";
 
 export const GET: ApiHandler = (_req, { params }) => {

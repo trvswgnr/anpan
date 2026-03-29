@@ -1,4 +1,4 @@
-import { useState } from "bun-web-framework/islands";
+import { useState } from "anpan/islands";
 
 interface Props {
   slug: string;

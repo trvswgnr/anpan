@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "bun-web-framework",
+      "name": "anpan",
       "devDependencies": {
         "@types/bun": "latest",
         "playwright": "1.56.1",

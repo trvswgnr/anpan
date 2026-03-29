@@ -5,10 +5,10 @@ export default function HomePage(_props: PageProps) {
   return (
     <>
       <Head>
-        <title>Home — bun-web-framework</title>
+        <title>Home — anpan</title>
         <meta name="description" content="A Bun-native SSR framework" />
       </Head>
-      <h1>Welcome to bun-web-framework</h1>
+      <h1>Welcome to anpan</h1>
       <p>A lightweight SSR framework built on Bun with:</p>
       <ul>
         <li>File-based routing</li>

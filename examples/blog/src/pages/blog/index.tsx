@@ -1,5 +1,5 @@
-import { Head } from "bun-web-framework";
-import type { PageProps } from "bun-web-framework";
+import { Head } from "anpan";
+import type { PageProps } from "anpan";
 import { posts, getPostsByTag } from "../../data/posts";
 
 export default function BlogIndexPage({ url }: PageProps) {

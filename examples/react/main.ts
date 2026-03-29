@@ -1,5 +1,5 @@
 /**
- * React example for bun-web-framework.
+ * React example for anpan.
  *
  * Because this project's tsconfig.json sets `jsxImportSource: "react"`, the
  * framework auto-detects React and uses it for island server-rendering and

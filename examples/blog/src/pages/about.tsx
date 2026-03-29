@@ -1,4 +1,4 @@
-import { Head } from "bun-web-framework";
+import { Head } from "anpan";
 
 export default function AboutPage() {
   return (
@@ -12,7 +12,7 @@ export default function AboutPage() {
         <h1>About</h1>
         <p>
           This blog is a demo application for{" "}
-          <a href="https://github.com/trvswgnr/bun-web-framework">bun-web-framework</a>, a
+          <a href="https://github.com/trvswgnr/anpan">anpan</a>, a
           server-side rendering framework built on top of Bun.
         </p>
 
@@ -46,8 +46,8 @@ export default function AboutPage() {
         <h2>Source</h2>
         <p>
           The full source is at{" "}
-          <a href="https://github.com/trvswgnr/bun-web-framework">
-            github.com/trvswgnr/bun-web-framework
+          <a href="https://github.com/trvswgnr/anpan">
+            github.com/trvswgnr/anpan
           </a>
           .
         </p>

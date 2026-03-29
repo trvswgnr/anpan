@@ -6,7 +6,7 @@ export default function RootLayout({ children }: LayoutProps) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>SolidJS + bun-web-framework</title>
+        <title>SolidJS + anpan</title>
       </head>
       <body style={{ fontFamily: "system-ui, sans-serif", maxWidth: "800px", margin: "0 auto", padding: "2rem" }}>
         <nav>
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps) {
         <main>{children}</main>
         <hr />
         <footer>
-          <small>Powered by bun-web-framework + SolidJS</small>
+          <small>Powered by anpan + SolidJS</small>
         </footer>
       </body>
     </html>
