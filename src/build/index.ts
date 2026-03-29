@@ -5,7 +5,7 @@ import type { JsxFrameworkAdapter } from "../islands/bundler.ts";
 export interface BuildConfig {
   /** Input pages directory */
   pagesDir?: string;
-  /** Output directory */
+  /** Output directory for island bundles. Default: ".bun" (islands written to .bun/islands/) */
   outDir?: string;
   /**
    * Custom JSX framework adapter for islands.
@@ -16,7 +16,7 @@ export interface BuildConfig {
 
 export async function build(config: BuildConfig = {}): Promise<void> {
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
-  const outDir = resolve(config.outDir ?? "./dist");
+  const outDir = resolve(config.outDir ?? ".bun");
   const islandOutDir = join(outDir, "islands");
 
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());

@@ -329,6 +329,8 @@ export const POST: ApiHandler = async (req, _ctx) => {
 
 Supported method exports: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`. Export `default` as a fallback that matches any method.
 
+If a request arrives with a method that isn't exported (and no `default` export exists), the framework returns `405 Method Not Allowed` with an `Allow` header listing the methods the route does export.
+
 ## Islands
 
 By default, every component is server-only: it renders to HTML and sends no JavaScript to the browser. An island is a component that also ships client-side JavaScript and gets hydrated in the browser.
@@ -628,7 +630,6 @@ import { build } from "bun-web-framework";
 
 await build({
   pagesDir: "./src/pages",
-  outDir: "./dist",
 });
 ```
 
@@ -698,6 +699,34 @@ Event handlers, boolean attributes, void elements, `className`, `htmlFor`, `dang
 
 On the server, event handlers (`onclick`, `onchange`, etc.) are stripped from the HTML output.
 
+## Security headers
+
+Every response includes the following headers by default. These are safe, non-breaking defaults — override any of them via middleware if needed.
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `SAMEORIGIN` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `X-XSS-Protection` | `0` |
+
+```ts
+// Example: override X-Frame-Options for a specific route via middleware
+const allowIframe: Middleware = async (req, next) => {
+  const res = await next(req);
+  if (new URL(req.url).pathname === "/embed") {
+    const headers = new Headers(res.headers);
+    headers.set("X-Frame-Options", "ALLOWALL");
+    return new Response(res.body, { status: res.status, headers });
+  }
+  return res;
+};
+```
+
+## Compression
+
+Responses with compressible content types (`text/*`, `application/json`, `application/javascript`, `application/xml`) are automatically compressed with gzip or deflate based on the client's `Accept-Encoding` header. Responses that already have a `Content-Encoding` header are left untouched.
+
 ## API reference
 
 ### `createServer(config?)`
@@ -706,11 +735,19 @@ Creates and starts the HTTP server. Returns the `Bun.serve` instance. Registers 
 
 ### `createDevServer(config?)`
 
-Same as `createServer` but enables file watching and browser hot reload via SSE.
+Same as `createServer` but enables file watching and browser hot reload via SSE. Accepts the same `ServerConfig` options.
 
 ### `build(config?)`
 
 Bundles island components for production. Writes output to `.bun/islands/` by default.
+
+```ts
+interface BuildConfig {
+  pagesDir?: string;          // default: "./src/pages"
+  outDir?: string;            // default: ".bun" (islands written to .bun/islands/)
+  jsxFramework?: JsxFrameworkAdapter;
+}
+```
 
 ### `Head`
 
@@ -726,7 +763,7 @@ Returns a redirect `Response`. Default status is `302`. Allowed: `301`, `302`, `
 
 ### `cache(ttlMs, fn)`
 
-Wraps an async function with an in-memory TTL cache. Arguments are serialized to JSON as the cache key. Declare at module level so the cache is shared across requests.
+Wraps an async function with an in-memory TTL cache. Arguments are serialized to JSON as the cache key. Cache entries are evicted lazily on the next call after expiry — no background timers. Declare at module level so the cache is shared across requests.
 
 ```ts
 const getPosts = cache(30_000, async () => db.posts.findAll());
@@ -734,11 +771,40 @@ const getPosts = cache(30_000, async () => db.posts.findAll());
 
 ### `cacheFor(seconds)`
 
-Returns `{ headers: { "Cache-Control": "public, max-age=N, stale-while-revalidate=M" } }` for spreading into a loader return value.
+Returns `{ headers: { "Cache-Control": "public, max-age=N, stale-while-revalidate=M" } }` for spreading into a loader return value. The `stale-while-revalidate` window is `max(1, floor(seconds / 5))`.
 
 ```ts
 return { data, ...cacheFor(300) };
 ```
+
+### `h(type, props, ...children)`
+
+JSX element factory. Creates a `VNode`. Normally called implicitly by the JSX transform, but can be used directly.
+
+```ts
+import { h } from "bun-web-framework";
+
+const node = h("div", { className: "box" }, h("p", null, "Hello"));
+```
+
+### `Fragment`
+
+Symbol used for JSX fragments (`<>...</>`). Normally used implicitly by the JSX transform.
+
+### `renderToString(node)`
+
+Synchronously renders a `VNode` tree to an HTML string. Handles components, fragments, HTML escaping, void elements, boolean attributes, and `className`/`htmlFor` mapping.
+
+```ts
+import { h, renderToString } from "bun-web-framework";
+
+const html = renderToString(h("h1", null, "Hello"));
+// => "<h1>Hello</h1>"
+```
+
+### `renderToStream(node)`
+
+Returns a `ReadableStream<Uint8Array>` that emits the rendered HTML. Useful for streaming responses outside the normal page rendering pipeline.
 
 ### `JsxFrameworkAdapter`
 
@@ -804,11 +870,62 @@ type ApiHandler = (
   ctx: { params: Record<string, string> },
 ) => Response | Promise<Response>;
 
-// Middleware
+// Middleware function
 type Middleware = (
   req: Request,
-  next: (req: Request) => Response | Promise<Response>,
+  next: Handler,
 ) => Response | Promise<Response>;
+
+// Inner handler passed to middleware
+type Handler = (req: Request) => Response | Promise<Response>;
+
+// Virtual DOM node
+interface VNode {
+  type: string | ComponentType | symbol;
+  props: Props;
+  key?: string | null;
+}
+
+// Component function
+type ComponentType<P = any> = (props: P) => VNode | Primitive | null;
+
+// JSX children
+type Child = Primitive | VNode | Child[];
+type Primitive = string | number | boolean | null | undefined;
+
+// Build configuration
+interface BuildConfig {
+  pagesDir?: string;
+  outDir?: string;
+  jsxFramework?: JsxFrameworkAdapter;
+}
+
+// Route definition (returned by the router)
+interface Route {
+  pattern: string;        // e.g. "/blog/:slug"
+  filePath: string;
+  type: "page" | "api" | "layout" | "error" | "notfound";
+  params: string[];       // e.g. ["slug"]
+  isDynamic: boolean;
+  isCatchAll: boolean;
+}
+
+// Result of matching a URL to a route
+interface RouteMatch {
+  route: Route;
+  params: Record<string, string>;
+}
+
+// Page module shape (what a page file exports)
+interface PageModule {
+  default: (props: PageProps) => VNode | Child | null;
+  loader?: Loader;
+}
+
+// Layout module shape (what a layout file exports)
+interface LayoutModule {
+  default: (props: LayoutProps) => VNode | Child | null;
+}
 ```
 
 ## Tests
