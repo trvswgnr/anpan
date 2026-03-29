@@ -1,0 +1,13 @@
+{
+  "name": "example-preact",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot main.ts",
+    "start": "NODE_ENV=production bun run main.ts"
+  },
+  "dependencies": {
+    "preact": "^10.24.0",
+    "preact-render-to-string": "^6.5.0"
+  }
+}
