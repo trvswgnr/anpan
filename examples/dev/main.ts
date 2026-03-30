@@ -9,8 +9,8 @@ const logger: Middleware = async (req, next) => {
 };
 
 const server = await createDevServer({
-  pagesDir: "./examples/dev/pages",
-  publicDir: "./examples/dev/public",
+  pagesDir: "./pages",
+  publicDir: "./public",
   middleware: [logger],
   port: parseInt(process.env.PORT ?? "3000"),
 });

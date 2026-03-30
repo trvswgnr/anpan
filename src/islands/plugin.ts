@@ -65,6 +65,24 @@ export function createIslandPlugin(
         build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({
           path: JSX_DEV_RUNTIME,
         }));
+
+        // Redirect any direct import of the server-side islands module
+        // (e.g. "../../../src/islands/index.ts") to the browser-safe
+        // client-runtime.ts. This prevents node:crypto and node:async_hooks
+        // from being bundled into the browser output.
+        const SERVER_ISLANDS = join(import.meta.dir, "index.ts");
+        build.onResolve({ filter: /islands\/index\.ts$/ }, (args) => {
+          // Only redirect if the resolved absolute path is our server module
+          const resolved = join(args.resolveDir, args.path);
+          if (resolved === SERVER_ISLANDS) {
+            return { path: CLIENT_RUNTIME };
+          }
+        });
+        // Also catch the package import form "anpan/islands" that the string
+        // replacement might miss in edge cases.
+        build.onResolve({ filter: /^anpan\/islands$/ }, () => ({
+          path: CLIENT_RUNTIME,
+        }));
       }
 
       build.onLoad({ filter: /\.island\.(tsx?|jsx?)$/ }, async (args) => {
@@ -77,11 +95,19 @@ export function createIslandPlugin(
           // Also strip any island() wrapper exports since the component is
           // used directly by the hydration runtime.
           let transformed = source.replace(ISLANDS_IMPORT_RE, `from "${CLIENT_RUNTIME}"`);
-          // Remove manually-written island() default exports (backward compat)
-          transformed = transformed.replace(
-            /\nexport\s+default\s+island\s*\([^)]+\)\s*;?\s*$/m,
-            "",
+          // Replace manually-written island() default exports with a plain
+          // `export default ComponentName` so the hydration runtime can import
+          // the component directly without the server-only island() wrapper.
+          const islandCallMatch = transformed.match(
+            /\nexport\s+default\s+island\s*\(\s*(\w+)\s*,[^)]+\)\s*;?\s*$/m,
           );
+          if (islandCallMatch) {
+            const compName = islandCallMatch[1]!;
+            transformed = transformed.replace(
+              /\nexport\s+default\s+island\s*\([^)]+\)\s*;?\s*$/m,
+              `\nexport default ${compName};`,
+            );
+          }
 
           // If an adapter provides a clientMountSnippet, append the
           // __islandMount export so the hydration runtime uses the framework's

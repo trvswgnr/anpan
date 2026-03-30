@@ -277,3 +277,112 @@ describe("SSR in browser", () => {
     await page.close();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Counter island interactivity — dev / react / preact / solidjs examples
+// ---------------------------------------------------------------------------
+
+type ExampleHandle = { base: string; proc: ReturnType<typeof Bun.spawn> };
+
+async function startCounterExample(dir: string): Promise<ExampleHandle> {
+  const srv = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
+  const port = srv.port;
+  srv.stop(true); // fire-and-forget; port is reserved until process binds it
+
+  const proc = Bun.spawn(["bun", "run", "main.ts"], {
+    cwd: dir,
+    env: { ...process.env, PORT: String(port) },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const exampleBase = `http://localhost:${port}`;
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    try { await fetch(exampleBase + "/"); return { base: exampleBase, proc }; } catch { /* not ready */ }
+    await Bun.sleep(200);
+  }
+  proc.kill();
+  throw new Error(`${dir} did not start within 30 s`);
+}
+
+/** Click + N times and verify the displayed count equals expected. */
+async function clickCounterTimes(page: Page, plusBtn: string, countEl: string, n: number, expected: number) {
+  for (let i = 0; i < n; i++) await page.locator(plusBtn).click();
+  await page.waitForFunction(
+    ([sel, val]: [string, string]) => document.querySelector(sel)?.textContent === val,
+    [countEl, String(expected)] as [string, string],
+    { timeout: 5000 },
+  );
+  expect(await page.locator(countEl).textContent()).toBe(String(expected));
+}
+
+// ---------------------------------------------------------------------------
+// Counter island interactivity — all examples share one Chromium instance
+// ---------------------------------------------------------------------------
+
+describe("Counter island interactivity", () => {
+  let counterBrowser: Browser;
+
+  beforeAll(async () => {
+    counterBrowser = await chromium.launch({ headless: true });
+  }, 30_000);
+
+  afterAll(async () => {
+    await counterBrowser?.close();
+  });
+
+  function counterPage() {
+    return counterBrowser.newContext().then((ctx) => ctx.newPage());
+  }
+
+  function makeCounterSuite(exampleDir: string, indexPath: string) {
+    let example: ExampleHandle;
+
+    beforeAll(async () => {
+      example = await startCounterExample(join(REPO_ROOT, exampleDir));
+    }, 45_000);
+
+    afterAll(() => {
+      example?.proc.kill();
+    });
+
+    test("counter increments on + click", async () => {
+      const p = await counterPage();
+      await p.goto(`${example.base}${indexPath}`);
+      await waitForHydration(p);
+      await clickCounterTimes(p, "button:has-text('+')", "span", 3, 3);
+      await p.close();
+    });
+
+    test("counter decrements on − click", async () => {
+      const p = await counterPage();
+      await p.goto(`${example.base}${indexPath}`);
+      await waitForHydration(p);
+      await p.locator("button:has-text('+')").click();
+      await p.locator("button:has-text('+')").click();
+      await p.locator("button:has-text('−')").click();
+      await p.waitForFunction(
+        () => document.querySelector("span")?.textContent === "1",
+        { timeout: 5000 },
+      );
+      expect(await p.locator("span").textContent()).toBe("1");
+      await p.close();
+    });
+  }
+
+  describe("dev example", () => {
+    makeCounterSuite("examples/dev", "/counter");
+  });
+
+  describe("react example", () => {
+    makeCounterSuite("examples/react", "/");
+  });
+
+  describe("preact example", () => {
+    makeCounterSuite("examples/preact", "/");
+  });
+
+  describe("solidjs example", () => {
+    makeCounterSuite("examples/solidjs", "/");
+  });
+});
