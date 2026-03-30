@@ -1,8 +1,9 @@
 import type { ApiHandler } from "anpan";
 import { likes, getPost } from "../../data/posts";
 
-export const GET: ApiHandler = (_req, { params }) => {
-  const slug = params.slug;
+// GET /api/likes?slug=post-id — query param matches flat /api/likes route (no dynamic segment).
+export const GET: ApiHandler = (req) => {
+  const slug = new URL(req.url).searchParams.get("slug") ?? "";
   if (!slug) {
     return Response.json({ error: "Missing slug" }, { status: 400 });
   }

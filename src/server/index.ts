@@ -123,6 +123,16 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // Scan routes
   let routes: Route[] = await scanRoutes(pagesDir);
 
+  const fallbackMatchRoute = (): Route =>
+    routes[0] ?? {
+      pattern: "/",
+      filePath: join(pagesDir, "__anpan_fallback__.tsx"),
+      type: "page",
+      params: [],
+      isDynamic: false,
+      isCatchAll: false,
+    };
+
   // Bundle islands - scan from srcDir, not just pagesDir
   let { manifest: islandManifest, runtimeUrl: islandRuntimeUrl }: IslandBundleResult =
     await bundleIslands(srcDir, islandOutDir, adapter);
@@ -147,7 +157,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 
     if (!match) {
       return renderNotFound({
-        match: { route: routes[0]!, params: {} },
+        match: { route: fallbackMatchRoute(), params: {} },
         req,
         allRoutes: routes,
         islandManifest,
@@ -177,7 +187,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
       console.error("[server] Unhandled error:", err);
       res = await renderErrorPage(
         {
-          match: { route: routes[0]!, params: {} },
+          match: { route: fallbackMatchRoute(), params: {} },
           req,
           allRoutes: routes,
           islandManifest,

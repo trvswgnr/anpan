@@ -6,6 +6,7 @@ import type { IslandManifest } from "../islands/types.ts";
 import { findLayouts } from "../router/index.ts";
 import type { Route, RouteContext, RouteMatch, Loader, LoaderReturn } from "../router/types.ts";
 import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
+import { DEV_RELOAD_CLIENT_SCRIPT } from "../dev/reload-client-script.ts";
 
 // Types
 
@@ -259,11 +260,7 @@ function buildHeadInjection(headHtml: string, islandScripts: string, isDev: bool
   if (headHtml) parts.push(headHtml);
   if (islandScripts) parts.push(islandScripts);
   if (isDev) {
-    parts.push(
-      `<script>(function(){var es=new EventSource('/__dev/reload');` +
-      `es.onmessage=function(e){if(e.data==='reload')location.reload()};` +
-      `es.onerror=function(){setTimeout(function(){location.reload()},1000)}})();</script>`,
-    );
+    parts.push(`<script>${DEV_RELOAD_CLIENT_SCRIPT}</script>`);
   }
   return parts.join("\n  ");
 }
@@ -287,8 +284,8 @@ export async function renderErrorPage(
   if (errorRoute) {
     try {
       return await renderPage({ ...ctx, match: { route: errorRoute, params: {} } });
-    } catch {
-      // fall through
+    } catch (err) {
+      console.error("[renderer] Custom _error page failed:", err);
     }
   }
 
@@ -312,8 +309,8 @@ export async function renderNotFound(ctx: RenderContext): Promise<Response> {
     try {
       const res = await renderPage({ ...ctx, match: { route: notFoundRoute, params: {} } });
       return new Response(res.body, { status: 404, headers: res.headers });
-    } catch {
-      // fall through
+    } catch (err) {
+      console.error("[renderer] Custom _404 page failed:", err);
     }
   }
 

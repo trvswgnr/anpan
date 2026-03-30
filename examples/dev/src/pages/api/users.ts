@@ -1,5 +1,3 @@
-import type { RouteContext } from "anpan";
-
 const USERS = [
   { id: 1, name: "Alice" },
   { id: 2, name: "Bob" },
@@ -10,7 +8,12 @@ export async function GET(_req: Request, _ctx: { params: Record<string, string> 
 }
 
 export async function POST(req: Request, _ctx: { params: Record<string, string> }) {
-  const body = await req.json() as { name?: string };
+  let body: { name?: string };
+  try {
+    body = (await req.json()) as { name?: string };
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   if (!body.name) {
     return Response.json({ error: "name is required" }, { status: 400 });
   }

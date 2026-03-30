@@ -115,7 +115,7 @@ function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
     el.setAttribute(key.toLowerCase(), String(val));
   }
 
-  if (!(vnode.type as string in VOID_TAGS)) {
+  if (!VOID_TAGS.has(vnode.type as string)) {
     renderToDom(vnode.props.children, el);
   }
 
@@ -183,6 +183,7 @@ async function hydrate(): Promise<void> {
       try {
         props = JSON.parse(propsRaw);
       } catch {
+        console.warn("[islands] Invalid data-props JSON (using empty props):", propsRaw.slice(0, 200));
         props = {};
       }
 

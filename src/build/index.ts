@@ -5,6 +5,11 @@ import type { JsxFrameworkAdapter } from "../islands/bundler.ts";
 export interface BuildConfig {
   /** Input pages directory */
   pagesDir?: string;
+  /**
+   * Root directory scanned for `.island.tsx` files. Defaults to the parent of
+   * `pagesDir`, matching `createServer`'s default `srcDir`.
+   */
+  srcDir?: string;
   /** Output directory for island bundles. Default: ".anpan" (islands written to .anpan/islands/) */
   outDir?: string;
   /**
@@ -16,13 +21,14 @@ export interface BuildConfig {
 
 export async function build(config: BuildConfig = {}): Promise<void> {
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
+  const islandRoot = config.srcDir ? resolve(config.srcDir) : join(pagesDir, "..");
   const outDir = resolve(config.outDir ?? ANPAN_DIR);
   const islandOutDir = join(outDir, "islands");
 
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
 
   console.log("[build] Bundling islands...");
-  const { manifest } = await bundleIslands(pagesDir, islandOutDir, adapter);
+  const { manifest } = await bundleIslands(islandRoot, islandOutDir, adapter);
   console.log(`[build] Bundled ${manifest.size} island(s) -> ${islandOutDir}`);
 
   // Write manifest JSON for reference

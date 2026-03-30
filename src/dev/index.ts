@@ -1,4 +1,5 @@
 import { createServer, type ServerConfig } from "../server/index.ts";
+import { DEV_RELOAD_CLIENT_SCRIPT } from "./reload-client-script.ts";
 
 // Dev server - wraps createServer() and adds:
 //   * File watching via Bun's native FS watcher (browser reload on source change)
@@ -60,12 +61,6 @@ function setupWatcher(dir: string, onChange: () => void): void {
   }
 }
 
-// Hot reload script injected by the renderer in dev mode
+// Hot reload script injected by the renderer in dev mode (same source as buildHeadInjection)
 
-export const DEV_RELOAD_SCRIPT = `
-(function() {
-  var es = new EventSource('/__dev/reload');
-  es.onmessage = function(e) { if (e.data === 'reload') location.reload(); };
-  es.onerror = function() { setTimeout(function() { location.reload(); }, 1000); };
-})();
-`.trim();
+export const DEV_RELOAD_SCRIPT = DEV_RELOAD_CLIENT_SCRIPT;
