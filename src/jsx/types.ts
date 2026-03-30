@@ -15,17 +15,3 @@ export type ComponentType<P = any> = (props: P) => VNode | Primitive | null;
 
 // JSX intrinsic element types (subset - extend as needed)
 export type HTMLTag = keyof HTMLElementTagNameMap | string;
-
-declare global {
-  namespace JSX {
-    type Element = VNode | Primitive | null;
-
-    interface ElementChildrenAttribute {
-      children: object;
-    }
-
-    interface IntrinsicElements {
-      [tag: string]: Record<string, unknown> & { children?: Child | Child[] };
-    }
-  }
-}

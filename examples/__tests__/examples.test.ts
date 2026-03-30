@@ -51,6 +51,9 @@ async function getFreePort(): Promise<number> {
   const srv = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
   const port = srv.port;
   await srv.stop(true);
+  if (port === undefined) {
+    throw new Error("expected TCP port after binding to :0");
+  }
   return port;
 }
 

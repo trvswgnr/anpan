@@ -6,9 +6,11 @@
     "type": "git",
     "url": "git+https://github.com/trvswgnr/anpan.git"
   },
+  "files": [
+    "src"
+  ],
   "type": "module",
   "main": "./src/index.ts",
-  "files": ["src"],
   "exports": {
     ".": "./src/index.ts",
     "./islands": {
@@ -22,14 +24,10 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "cd examples/dev && bun run --hot main.ts",
-    "example:blog": "cd examples/blog && bun run --hot main.ts",
-    "example:react": "cd examples/react && bun run --hot main.ts",
-    "example:preact": "cd examples/preact && bun run --hot main.ts",
-    "example:solidjs": "cd examples/solidjs && bun run --hot main.ts",
+    "example": "./scripts/run-example.sh $1",
     "build": "bun run src/build/index.ts",
     "test": "bun test",
-    "typecheck": "bun tsc --noEmit"
+    "typecheck": "./scripts/typecheck.sh"
   },
   "devDependencies": {
     "@types/bun": "latest",

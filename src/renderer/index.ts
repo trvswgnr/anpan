@@ -59,7 +59,12 @@ export type PageProps<
 };
 
 export interface LayoutProps extends RouteContext {
-  children: VNode | null;
+  /**
+   * Inner layout slot (framework-specific element tree). Typed as `any` so
+   * React/Preact/Solid layouts typecheck alongside anpan’s VNode-based routes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  children: any;
 }
 
 export interface RenderContext {

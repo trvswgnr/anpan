@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { renderToString as builtinRenderToString } from "../jsx/runtime.ts";
-import type { ComponentType } from "../jsx/types.ts";
 import type { IslandManifest, IslandMeta, JsxFrameworkAdapter } from "./types.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 
@@ -75,10 +74,13 @@ export interface IslandOptions<P> {
  * to write it by hand.
  */
 export function island<P>(
-  component: ComponentType<P>,
+  /** React, Preact, Solid, or anpan component — return type is framework-specific. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: (props: P) => any,
   filePath: string,
   exportNameOrOptions?: string | IslandOptions<P>,
-): ComponentType<P> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): (props: P) => any {
   const exportName =
     typeof exportNameOrOptions === "string"
       ? exportNameOrOptions
@@ -130,7 +132,7 @@ export function island<P>(
         "data-bundle": bundleUrl,
         dangerouslySetInnerHTML: { __html: snapshot },
       },
-    } as unknown as ReturnType<ComponentType<P>>;
+    } as unknown;
   };
 
   // Attach the island id so the bundler can reference it
@@ -138,7 +140,7 @@ export function island<P>(
   (IslandWrapper as unknown as Record<string, unknown>).__islandFilePath = filePath;
   (IslandWrapper as unknown as Record<string, unknown>).__islandExportName = exportName;
 
-  return IslandWrapper as ComponentType<P>;
+  return IslandWrapper as (props: P) => any;
 }
 
 export function stableId(filePath: string, exportName: string): string {

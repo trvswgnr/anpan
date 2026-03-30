@@ -1,6 +1,7 @@
 // Required by the TypeScript JSX transform in development mode.
 // The jsxDEV signature differs from jsx: it receives extra args (key, isStaticChildren, source, self)
 // that must NOT be passed to h() as children.
+import "./jsx-namespace.ts";
 import { h, FRAGMENT } from "./runtime.ts";
 import type { ComponentType, Props, VNode } from "./types.ts";
 
