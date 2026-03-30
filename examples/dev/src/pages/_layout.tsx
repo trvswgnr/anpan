@@ -12,11 +12,11 @@ export default function RootLayout({ children }: LayoutProps) {
       <body style="font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem;">
         <nav>
           <a href="/">Home</a>
-          {" · "}
+          {" | "}
           <a href="/about">About</a>
-          {" · "}
+          {" | "}
           <a href="/blog/hello-world">Blog post</a>
-          {" · "}
+          {" | "}
           <a href="/counter">Counter island</a>
         </nav>
         <hr />

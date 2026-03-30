@@ -1,9 +1,7 @@
 import { join, relative, sep } from "node:path";
 import type { Route, RouteMatch, RouteType } from "./types.ts";
 
-// ---------------------------------------------------------------------------
-// Route scanning — discover all page/api/layout/special files
-// ---------------------------------------------------------------------------
+// Route scanning - discover all page/api/layout/special files
 
 export async function scanRoutes(pagesDir: string): Promise<Route[]> {
   const glob = new Bun.Glob("**/*.{ts,tsx}");
@@ -18,9 +16,7 @@ export async function scanRoutes(pagesDir: string): Promise<Route[]> {
   return sortRoutes(routes);
 }
 
-// ---------------------------------------------------------------------------
 // Convert a relative file path (from pagesDir) to a Route descriptor
-// ---------------------------------------------------------------------------
 
 function filePathToRoute(relPath: string, absolutePath: string): Route | null {
   // Normalize to forward slashes
@@ -87,7 +83,7 @@ function buildPattern(withoutExt: string): {
     return seg;
   });
 
-  // index → /
+  // index -> /
   if (segments.at(-1) === "index") {
     segments.pop();
   }
@@ -97,9 +93,7 @@ function buildPattern(withoutExt: string): {
   return { pattern: pattern === "//" ? "/" : pattern, params, isDynamic, isCatchAll };
 }
 
-// ---------------------------------------------------------------------------
 // Route matching
-// ---------------------------------------------------------------------------
 
 export function matchRoute(
   routes: Route[],
@@ -160,16 +154,14 @@ function matchSegment(
     try {
       params[pat.slice(1)] = decodeURIComponent(seg);
     } catch {
-      return false; // malformed percent-encoding — reject this route match
+      return false; // malformed percent-encoding - reject this route match
     }
     return true;
   }
   return pat === seg;
 }
 
-// ---------------------------------------------------------------------------
-// Sort routes: static → dynamic → catch-all (within each: alphabetical)
-// ---------------------------------------------------------------------------
+// Sort routes: static -> dynamic -> catch-all (within each: alphabetical)
 
 function routeScore(r: Route): number {
   if (r.isCatchAll) return 2;
@@ -185,9 +177,7 @@ function sortRoutes(routes: Route[]): Route[] {
   });
 }
 
-// ---------------------------------------------------------------------------
 // Find layouts that apply to a given route (nearest first, then parent)
-// ---------------------------------------------------------------------------
 
 export function findLayouts(routes: Route[], route: Route): Route[] {
   const layouts: Route[] = [];

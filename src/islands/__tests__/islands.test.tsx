@@ -12,9 +12,7 @@ import { renderToString } from "../../jsx/runtime.ts";
 import type { IslandManifest } from "../types.ts";
 import type { VNode } from "../../jsx/types.ts";
 
-// ---------------------------------------------------------------------------
 // Fixtures
-// ---------------------------------------------------------------------------
 
 const FIXTURE_DIR = join(import.meta.dir, "fixtures");
 const FAKE_FILE = "/project/src/components/Counter.island.tsx";
@@ -24,9 +22,7 @@ function Counter({ initial = 0 }: { initial?: number }): VNode {
   return { type: "span", props: { children: String(count) } };
 }
 
-// ---------------------------------------------------------------------------
 // stableId
-// ---------------------------------------------------------------------------
 
 describe("stableId", () => {
   test("produces a stable id with filename prefix and 8-char hash", () => {
@@ -34,17 +30,17 @@ describe("stableId", () => {
     expect(id).toMatch(/^Counter-[a-f0-9]{8}$/);
   });
 
-  test("same inputs → same id (stable across calls)", () => {
+  test("same inputs -> same id (stable across calls)", () => {
     expect(stableId(FAKE_FILE, "default")).toBe(stableId(FAKE_FILE, "default"));
   });
 
-  test("different files → different ids", () => {
+  test("different files -> different ids", () => {
     expect(stableId("/a/Foo.island.tsx", "default")).not.toBe(
       stableId("/a/Bar.island.tsx", "default"),
     );
   });
 
-  test("different export names → different ids", () => {
+  test("different export names -> different ids", () => {
     expect(stableId(FAKE_FILE, "default")).not.toBe(stableId(FAKE_FILE, "named"));
   });
 
@@ -54,9 +50,7 @@ describe("stableId", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// island() wrapper — server-side rendering
-// ---------------------------------------------------------------------------
+// island() wrapper - server-side rendering
 
 describe("island() wrapper", () => {
   const IslandCounter = island(Counter, FAKE_FILE);
@@ -125,7 +119,7 @@ describe("island() wrapper", () => {
   });
 
   test("renders silently when no registry is in scope (no error)", () => {
-    // Island rendered outside runWithIslandRegistry — should not throw,
+    // Island rendered outside runWithIslandRegistry - should not throw,
     // just use the fallback bundle URL.
     expect(() => IslandCounter({ initial: 0 })).not.toThrow();
   });
@@ -137,7 +131,7 @@ describe("island() wrapper", () => {
   });
 
   test("strips function props from serialized data-props", () => {
-    // Functions can't be serialized to JSON — they must be omitted
+    // Functions can't be serialized to JSON - they must be omitted
     const IslandWithFn = island(
       (props: { label: string; onClick?: () => void }) => ({ type: "button", props: { children: props.label } } as unknown as ReturnType<typeof Counter>),
       "/project/Button.island.tsx",
@@ -153,9 +147,7 @@ describe("island() wrapper", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Full renderToString with island — checks the HTML output
-// ---------------------------------------------------------------------------
+// Full renderToString with island - checks the HTML output
 
 describe("renderToString with island", () => {
   const IslandCounter = island(Counter, FAKE_FILE);
@@ -208,14 +200,12 @@ describe("renderToString with island", () => {
         },
       });
     });
-    // All three instances share the same island type — 1 registry entry
+    // All three instances share the same island type - 1 registry entry
     expect(reg.encountered.size).toBe(1);
   });
 });
 
-// ---------------------------------------------------------------------------
-// useState — server-side no-op
-// ---------------------------------------------------------------------------
+// useState - server-side no-op
 
 describe("useState (server-side)", () => {
   test("returns [initialValue, noop setter]", () => {
@@ -230,9 +220,7 @@ describe("useState (server-side)", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // scanIslandFiles
-// ---------------------------------------------------------------------------
 
 describe("scanIslandFiles", () => {
   test("finds .island.tsx files", async () => {

@@ -6,7 +6,7 @@ export default function BlogIndexPage({ url }: PageProps) {
   const tag = url.searchParams.get("tag");
   const list = tag ? getPostsByTag(tag) : posts;
 
-  const title = tag ? `Posts tagged "${tag}" — Bun Blog` : "All posts — Bun Blog";
+  const title = tag ? `Posts tagged "${tag}" - Bun Blog` : "All posts - Bun Blog";
 
   return (
     <>

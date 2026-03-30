@@ -2,9 +2,7 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { matchRoute, findLayouts } from "../index.ts";
 import type { Route } from "../types.ts";
 
-// ---------------------------------------------------------------------------
-// matchRoute tests — uses pre-built route fixtures (no file I/O needed)
-// ---------------------------------------------------------------------------
+// matchRoute tests - uses pre-built route fixtures (no file I/O needed)
 
 function makeRoute(pattern: string, type: Route["type"] = "page"): Route {
   const params: string[] = [];

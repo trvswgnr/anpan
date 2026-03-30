@@ -15,9 +15,7 @@ setDefaultTimeout(60_000);
 
 const EXAMPLES = join(import.meta.dir, "..");
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 interface ServerHandle {
   base: string;
@@ -34,7 +32,7 @@ function installDeps(dir: string): void {
     );
     if (entries.length > 1) return;
   } catch {
-    // node_modules doesn't exist yet — proceed with install
+    // node_modules doesn't exist yet - proceed with install
   }
 
   const result = Bun.spawnSync(["bun", "install"], {
@@ -81,7 +79,7 @@ async function startExample(dir: string, port: number): Promise<ServerHandle> {
     await Bun.sleep(150);
   }
 
-  // Timed out — collect stderr for a useful error message
+  // Timed out - collect stderr for a useful error message
   proc.kill();
   const stderrChunks: Uint8Array[] = [];
   const reader = (proc.stderr as ReadableStream<Uint8Array>).getReader();
@@ -96,9 +94,7 @@ async function startExample(dir: string, port: number): Promise<ServerHandle> {
   throw new Error(`Example at ${dir} did not start on port ${port} within 20 s.\nstderr:\n${stderr}`);
 }
 
-// ---------------------------------------------------------------------------
 // Blog example
-// ---------------------------------------------------------------------------
 
 describe("blog example", () => {
   let server: ServerHandle;
@@ -184,9 +180,7 @@ describe("blog example", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // React example
-// ---------------------------------------------------------------------------
 
 describe("react example", () => {
   let server: ServerHandle;
@@ -243,9 +237,7 @@ describe("react example", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // Preact example
-// ---------------------------------------------------------------------------
 
 describe("preact example", () => {
   let server: ServerHandle;
@@ -301,9 +293,7 @@ describe("preact example", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // SolidJS example
-// ---------------------------------------------------------------------------
 
 describe("solidjs example", () => {
   let server: ServerHandle;

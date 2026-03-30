@@ -1,7 +1,7 @@
 import type { Middleware } from "../middleware/index.ts";
 
 /**
- * SSE endpoint for `/__dev/reload` — used by the dev script injected into pages
+ * SSE endpoint for `/__dev/reload` - used by the dev script injected into pages
  * when `isDev` is true. `createServer` registers this whenever dev mode is on;
  * `createDevServer` additionally watches files and calls `broadcastReload`.
  */

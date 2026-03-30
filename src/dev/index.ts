@@ -1,10 +1,8 @@
 import { createServer, type ServerConfig } from "../server/index.ts";
 
-// ---------------------------------------------------------------------------
-// Dev server — wraps createServer() and adds:
-//   • File watching via Bun's native FS watcher (browser reload on source change)
-//   • createServer already registers /__dev/reload SSE and injects the reload script in dev
-// ---------------------------------------------------------------------------
+// Dev server - wraps createServer() and adds:
+//   * File watching via Bun's native FS watcher (browser reload on source change)
+//   * createServer already registers /__dev/reload SSE and injects the reload script in dev
 
 /**
  * Create the dev server.
@@ -38,9 +36,7 @@ export async function createDevServer(
   return server;
 }
 
-// ---------------------------------------------------------------------------
 // File watcher using Bun's built-in FS watch
-// ---------------------------------------------------------------------------
 
 function setupWatcher(dir: string, onChange: () => void): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +44,7 @@ function setupWatcher(dir: string, onChange: () => void): void {
   try {
     const watcher = bunWatch ? bunWatch(dir) : null;
     if (!watcher) {
-      console.warn("[dev] Bun.watch not available — hot reload disabled");
+      console.warn("[dev] Bun.watch not available - hot reload disabled");
       return;
     }
 
@@ -60,13 +56,11 @@ function setupWatcher(dir: string, onChange: () => void): void {
       }
     })().catch(console.error);
   } catch {
-    console.warn("[dev] File watching unavailable — hot reload disabled");
+    console.warn("[dev] File watching unavailable - hot reload disabled");
   }
 }
 
-// ---------------------------------------------------------------------------
 // Hot reload script injected by the renderer in dev mode
-// ---------------------------------------------------------------------------
 
 export const DEV_RELOAD_SCRIPT = `
 (function() {

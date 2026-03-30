@@ -7,9 +7,7 @@ import { findLayouts } from "../router/index.ts";
 import type { Route, RouteContext, RouteMatch, Loader, LoaderReturn } from "../router/types.ts";
 import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface PageModule {
@@ -25,8 +23,8 @@ export interface LayoutModule {
 /**
  * Props passed to every page component.
  *
- * TLoader — the page's `loader` export (pass `typeof loader` for typed data).
- * TParams — shape of route params (e.g. `{ slug: string }` for `[slug].tsx`).
+ * TLoader - the page's `loader` export (pass `typeof loader` for typed data).
+ * TParams - shape of route params (e.g. `{ slug: string }` for `[slug].tsx`).
  *
  * @example
  * // pages/blog/[slug].tsx
@@ -68,10 +66,8 @@ export interface RenderContext {
   isDev: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Content marker — emitted by renderToString where {children} appears in
+// Content marker - emitted by renderToString where {children} appears in
 // the layout, so we can split the layout shell into before/after.
-// ---------------------------------------------------------------------------
 
 /** Unique sentinel emitted into the layout HTML where the page content goes. */
 const CONTENT_MARKER = "<!--_BWFW_CONTENT_-->";
@@ -79,9 +75,7 @@ const CONTENT_MARKER = "<!--_BWFW_CONTENT_-->";
 /** Special VNode type that emits CONTENT_MARKER during renderToString. */
 export const CONTENT_MARKER_TYPE = "__bwfw_content_marker__";
 
-// ---------------------------------------------------------------------------
-// renderPage — true streaming: head sent immediately, body follows
-// ---------------------------------------------------------------------------
+// renderPage - true streaming: head sent immediately, body follows
 
 export async function renderPage(ctx: RenderContext): Promise<Response> {
   const { match, req, allRoutes, islandManifest, islandRuntimeUrl, isDev } = ctx;
@@ -121,11 +115,11 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
 
     if (loaderResult instanceof Response) {
       const status = loaderResult.status;
-      // Redirects — return immediately.
+      // Redirects - return immediately.
       if (status >= 300 && status < 400) return loaderResult;
-      // 404 — render the custom _404 page (wrapped in layout) with 404 status.
+      // 404 - render the custom _404 page (wrapped in layout) with 404 status.
       if (status === 404) return renderNotFound(ctx);
-      // Other error responses — return as-is.
+      // Other error responses - return as-is.
       return loaderResult;
     }
 
@@ -143,10 +137,10 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   }
 
   // ---------------------------------------------------------------------------
-  // Phase 1 — render the page component.
-  //   • Calls <Head> which registers head content into headCtx.
-  //   • Calls island() wrappers which register into islandReg.
-  //   • Result: pageHtml string + all metadata known.
+  // Phase 1 - render the page component.
+  //   * Calls <Head> which registers head content into headCtx.
+  //   * Calls island() wrappers which register into islandReg.
+  //   * Result: pageHtml string + all metadata known.
   // ---------------------------------------------------------------------------
   const pageCtx = { ...routeCtx, data: loaderData };
 
@@ -158,11 +152,11 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   });
 
   // ---------------------------------------------------------------------------
-  // Phase 2 — render the layout shell with a content marker where {children}
+  // Phase 2 - render the layout shell with a content marker where {children}
   // goes. This gives us the full outer HTML structure immediately, without
   // needing the page HTML to be ready first.
-  //   • layouts[0] = innermost, layouts[last] = outermost root layout.
-  //   • We wrap innermost → outermost so root layout is the outermost element.
+  //   * layouts[0] = innermost, layouts[last] = outermost root layout.
+  //   * We wrap innermost -> outermost so root layout is the outermost element.
   //
   // Must run inside runWithIslandRegistry so islands used in layouts (e.g. a
   // ThemeToggle in the nav) register and get hydration scripts injected.
@@ -199,13 +193,13 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   const shellBeforeWithHead = spliceBeforeCloseHead(shellBefore, headInjection);
 
   // ---------------------------------------------------------------------------
-  // Stream — 3 chunks:
+  // Stream - 3 chunks:
   //   1. DOCTYPE + layout shell head/opening body (sent immediately)
   //   2. Page HTML (available right away since Phase 1 is synchronous)
   //   3. Layout shell closing tags (footer, </body>, </html>)
   //
   // When Phase 1 becomes async (data fetching, Suspense), chunk 1 will land
-  // in the browser before chunk 2 is ready — that's the streaming payoff.
+  // in the browser before chunk 2 is ready - that's the streaming payoff.
   // ---------------------------------------------------------------------------
   return new Response(
     buildStream(`<!DOCTYPE html>\n${shellBeforeWithHead}`, pageHtml, shellAfter),
@@ -221,15 +215,13 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Streaming helpers
-// ---------------------------------------------------------------------------
 
 const encoder = new TextEncoder();
 
 /**
  * Build a ReadableStream from three pre-computed string segments.
- * Each segment is its own chunk — the browser can start parsing chunk 1
+ * Each segment is its own chunk - the browser can start parsing chunk 1
  * while chunks 2 and 3 are still being assembled.
  *
  * When async page rendering is added (data fetching, Suspense), chunk 2
@@ -283,9 +275,7 @@ function buildIslandScripts(reg: IslandRegistry, runtimeUrl: string): string {
   return `<script type="module" src="${runtimeUrl}"></script>`;
 }
 
-// ---------------------------------------------------------------------------
 // Error / 404 pages
-// ---------------------------------------------------------------------------
 
 export async function renderErrorPage(
   ctx: RenderContext,

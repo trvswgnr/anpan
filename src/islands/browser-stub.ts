@@ -1,7 +1,7 @@
 // Browser-side stub for "anpan/islands".
 // Resolved when Bun.build() uses target: "browser" or the "browser" condition.
 //
-// island() is an identity function in the browser — the component is used
+// island() is an identity function in the browser - the component is used
 // directly by the hydration runtime. The server wrapper is not needed.
 //
 // useState comes from client-runtime so all islands share the same reactive

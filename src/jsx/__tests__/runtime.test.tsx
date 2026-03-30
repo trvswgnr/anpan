@@ -12,7 +12,7 @@ describe("renderToString", () => {
   });
 
   test("escapes HTML entities", () => {
-    // Single quotes in text content don't need escaping — only &, <, >, " are escaped
+    // Single quotes in text content don't need escaping - only &, <, >, " are escaped
     expect(renderToString("<script>alert('xss')</script>")).toBe(
       "&lt;script&gt;alert('xss')&lt;/script&gt;",
     );

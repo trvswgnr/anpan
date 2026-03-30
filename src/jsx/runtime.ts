@@ -2,9 +2,7 @@ import type { Child, ComponentType, Props, VNode } from "./types.ts";
 
 export const FRAGMENT = Symbol("Fragment");
 
-// ---------------------------------------------------------------------------
 // VNode creation
-// ---------------------------------------------------------------------------
 
 /**
  * Create a virtual DOM node. This is the JSX factory function.
@@ -28,9 +26,7 @@ export function h(
 
 export const Fragment = FRAGMENT;
 
-// ---------------------------------------------------------------------------
 // HTML serialization helpers
-// ---------------------------------------------------------------------------
 
 // Tags that must not have a closing tag
 const VOID_TAGS = new Set([
@@ -63,7 +59,7 @@ function serializeAttr(name: string, value: unknown): string {
   if (BOOLEAN_ATTRS.has(attrName)) return value ? ` ${attrName}` : "";
   if (value === true) return ` ${attrName}`;
 
-  // Style objects: convert { camelCase: value } → "kebab-case:value;"
+  // Style objects: convert { camelCase: value } -> "kebab-case:value;"
   if (attrName === "style" && typeof value === "object") {
     const css = Object.entries(value as Record<string, unknown>)
       .filter(([, v]) => v !== null && v !== undefined && v !== false && v !== "")
@@ -94,14 +90,12 @@ function propToAttr(name: string): string {
     case "encType": return "enctype";
     case "noValidate": return "novalidate";
     case "useMap": return "usemap";
-    case "viewBox": return "viewBox"; // SVG — case-sensitive
+    case "viewBox": return "viewBox"; // SVG - case-sensitive
     default: return name.toLowerCase();
   }
 }
 
-// ---------------------------------------------------------------------------
 // Synchronous render to string
-// ---------------------------------------------------------------------------
 
 /**
  * Render a VNode tree to an HTML string. Synchronous.
@@ -119,7 +113,7 @@ export function renderToString(node: unknown): string {
 
   const vnode = node as VNode;
 
-  // Fragment — handles anpan's own FRAGMENT symbol as well as React/Preact
+  // Fragment - handles anpan's own FRAGMENT symbol as well as React/Preact
   // fragment symbols (typeof symbol) so that pages compiled with React or
   // Preact's jsx-runtime render correctly through anpan's renderToString.
   if (vnode.type === FRAGMENT || vnode.type === null || typeof vnode.type === "symbol") {
@@ -132,7 +126,7 @@ export function renderToString(node: unknown): string {
     return renderToString(result);
   }
 
-  // Special content marker — emits the sentinel string used by the renderer
+  // Special content marker - emits the sentinel string used by the renderer
   // to split the layout shell into before/after the page content.
   if (vnode.type === "__bwfw_content_marker__") {
     return "<!--_BWFW_CONTENT_-->";
@@ -164,9 +158,7 @@ export function renderToString(node: unknown): string {
   return `<${tag}${attrs}>${inner}</${tag}>`;
 }
 
-// ---------------------------------------------------------------------------
-// Streaming render — yields HTML chunks as Uint8Array
-// ---------------------------------------------------------------------------
+// Streaming render - yields HTML chunks as Uint8Array
 
 const encoder = new TextEncoder();
 
@@ -210,7 +202,7 @@ function renderNodeToController(
 
   const vnode = node as VNode;
 
-  // Fragment — handles anpan's own FRAGMENT symbol as well as React/Preact
+  // Fragment - handles anpan's own FRAGMENT symbol as well as React/Preact
   // fragment symbols so pages compiled with React or Preact jsx-runtime render
   // correctly through anpan's streaming renderer.
   if (vnode.type === FRAGMENT || vnode.type === null || typeof vnode.type === "symbol") {

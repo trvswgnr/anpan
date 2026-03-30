@@ -4,7 +4,7 @@ import type { Middleware } from "anpan";
 const logger: Middleware = async (req, next) => {
   const start = Date.now();
   const res = await next(req);
-  console.log(`${req.method} ${new URL(req.url).pathname} ${res.status} — ${Date.now() - start}ms`);
+  console.log(`${req.method} ${new URL(req.url).pathname} ${res.status} - ${Date.now() - start}ms`);
   return res;
 };
 

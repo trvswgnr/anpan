@@ -1,6 +1,6 @@
 # anpan
 
-A small SSR framework built on [Bun](https://bun.sh). Pages are TSX files, all rendering happens on the server, and interactive pieces are hydrated in the browser as islands. Ships its own minimal JSX runtime — no React required. React and Preact are also supported as first-class island adapters via auto-detection.
+A small SSR framework built on [Bun](https://bun.sh). Pages are TSX files, all rendering happens on the server, and interactive pieces are hydrated in the browser as islands. Ships its own minimal JSX runtime - no React required. React and Preact are also supported as first-class island adapters via auto-detection.
 
 ## Requirements
 
@@ -141,8 +141,8 @@ export default function Post({ data, params }: PageProps<typeof loader, Params>)
 Use `[param]` for a single segment and `[...param]` for a catch-all.
 
 ```
-pages/blog/[slug].tsx        → /blog/hello-world  → params.slug = "hello-world"
-pages/docs/[...path].tsx     → /docs/a/b/c        → params.path = "a/b/c"
+pages/blog/[slug].tsx        -> /blog/hello-world  -> params.slug = "hello-world"
+pages/docs/[...path].tsx     -> /docs/a/b/c        -> params.path = "a/b/c"
 ```
 
 Static routes always win over dynamic ones.
@@ -245,9 +245,9 @@ export default function Post({ data }: PageProps<typeof loader>) {
 
 The return value is either:
 
-- `{ data: T }` — the `data` prop is passed to the page component, typed via `typeof loader`
-- `Response` — returned directly; use `notFound()` or `redirect()` for common cases
-- `{ data: T, status: number, headers: {...} }` — data with custom status or headers
+- `{ data: T }` - the `data` prop is passed to the page component, typed via `typeof loader`
+- `Response` - returned directly; use `notFound()` or `redirect()` for common cases
+- `{ data: T, status: number, headers: {...} }` - data with custom status or headers
 
 ### notFound()
 
@@ -270,7 +270,7 @@ Allowed status codes: `301`, `302`, `307`, `308`.
 
 ### Caching
 
-**HTTP caching** — `cacheFor(seconds)` returns `Cache-Control` headers that spread directly into a loader return value.
+**HTTP caching** - `cacheFor(seconds)` returns `Cache-Control` headers that spread directly into a loader return value.
 
 ```ts
 import { notFound, cacheFor } from "anpan";
@@ -283,13 +283,13 @@ export const loader: Loader = async ({ params }) => {
 };
 ```
 
-**Server-side caching** — `cache(ttlMs, fn)` wraps any async function with an in-memory TTL cache. Results are keyed by the serialized arguments and expire after `ttlMs` milliseconds.
+**Server-side caching** - `cache(ttlMs, fn)` wraps any async function with an in-memory TTL cache. Results are keyed by the serialized arguments and expire after `ttlMs` milliseconds.
 
 ```ts
 import { cache, notFound } from "anpan";
 import type { Loader } from "anpan";
 
-// Declare once at module level — cache is shared across all requests.
+// Declare once at module level - cache is shared across all requests.
 const getPost = cache(60_000, async (slug: string) => {
   return await db.posts.findOne({ slug });
 });
@@ -311,7 +311,7 @@ export const loader: Loader = async ({ params }) => {
 };
 ```
 
-For distributed caching (Redis, KV), pass a function that uses it — `cache()` is just a wrapper around any async function.
+For distributed caching (Redis, KV), pass a function that uses it - `cache()` is just a wrapper around any async function.
 
 ## API routes
 
@@ -388,7 +388,7 @@ In the browser, the client runtime finds each `<island-placeholder>`, imports th
 
 ### useState
 
-`useState` inside an island works the same as React's hook in terms of API, but it is implemented with a tiny custom runtime — no React dependency.
+`useState` inside an island works the same as React's hook in terms of API, but it is implemented with a tiny custom runtime - no React dependency.
 
 ```tsx
 const [value, setValue] = useState(initialValue);
@@ -414,7 +414,7 @@ If `jsxImportSource` in `tsconfig.json` is `"react"` or `"preact"`, the framewor
 Island components are plain React components. Install `react`, `react-dom`, and `@types/react` as dependencies. The framework handles server rendering and hydration automatically.
 
 ```tsx
-// components/Counter.island.tsx — works with React hooks
+// components/Counter.island.tsx - works with React hooks
 import { useState } from "react";
 
 export default function Counter({ initial = 0 }: { initial?: number }) {
@@ -431,7 +431,7 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 
 **Preact**
 
-Same as React — set `"jsxImportSource": "preact"` and install `preact`.
+Same as React - set `"jsxImportSource": "preact"` and install `preact`.
 
 ### Custom JSX framework
 
@@ -457,10 +457,10 @@ The `clientMountSnippet` is appended to each island bundle. `__COMP__` is replac
 **Props must be JSON-serializable.** Island props are serialized to JSON and embedded in the HTML so the browser can reconstruct them. Functions, class instances, `undefined`, and circular references will be silently dropped.
 
 ```tsx
-// ✓ fine — string, number, boolean, plain object, array
+// [ok] fine - string, number, boolean, plain object, array
 <Counter initial={5} label="count" data={{ x: 1 }} />
 
-// ✗ dropped silently — functions cannot be serialized
+// [bad] dropped silently - functions cannot be serialized
 <Counter onChange={() => doSomething()} />
 ```
 
@@ -472,7 +472,7 @@ export default function Map({ lat, lng }: { lat: number; lng: number }) {
 
   // onclick or other event handlers are the entry point for side effects
   function init(el: HTMLDivElement) {
-    // el is the live DOM element — call any browser API here
+    // el is the live DOM element - call any browser API here
     loadMap(el, { lat, lng });
   }
 
@@ -485,7 +485,7 @@ Note: `ref` callbacks are not supported by the runtime. For DOM access, use `doc
 **Islands are isolated.** Each island manages its own state. There is no built-in mechanism for two islands on the same page to share state. Use a module-level variable, `localStorage`, a URL parameter, or a custom event (`dispatchEvent` / `addEventListener`) to communicate between islands.
 
 ```ts
-// shared-state.ts — plain module, works fine
+// shared-state.ts - plain module, works fine
 let globalCount = 0;
 export const getCount = () => globalCount;
 export const increment = () => { globalCount++; };
@@ -556,7 +556,7 @@ export default function NotFound({ url }: PageProps) {
   return (
     <>
       <Head><title>Not Found</title></Head>
-      <h1>404 — Page not found</h1>
+      <h1>404 - Page not found</h1>
       <p>{url.pathname} does not exist.</p>
       <a href="/">Go home</a>
     </>
@@ -576,7 +576,7 @@ export default function ErrorPage() {
   return (
     <>
       <Head><title>Something went wrong</title></Head>
-      <h1>500 — Internal server error</h1>
+      <h1>500 - Internal server error</h1>
       <p>Something went wrong. Please try again.</p>
     </>
   );
@@ -611,7 +611,7 @@ const server = await createDevServer({
 });
 ```
 
-When a file changes, the server rebuilds routes and island bundles, then signals all connected browser tabs to reload. The SSE connection and reload script are injected automatically — no client-side setup required.
+When a file changes, the server rebuilds routes and island bundles, then signals all connected browser tabs to reload. The SSE connection and reload script are injected automatically - no client-side setup required.
 
 You can also use Bun's `--hot` flag, which restarts the server process on file changes. Combine it with `createDevServer` to get both server-level hot reload and browser tab reload:
 
@@ -639,7 +639,7 @@ await build({
 
 ### Deploying
 
-The server runs TypeScript directly — no separate compilation step. The minimal set of files needed in production:
+The server runs TypeScript directly - no separate compilation step. The minimal set of files needed in production:
 
 ```
 src/           # your application source
@@ -667,11 +667,11 @@ Run `bun run build` as part of your CI pipeline before building the Docker image
 
 Pages stream to the client in two phases. The layout shell (including `<head>`) is sent first so the browser can start fetching CSS and other subresources. The page content follows once the page component has rendered.
 
-This is invisible to page authors — it happens automatically for all pages.
+This is invisible to page authors - it happens automatically for all pages.
 
 ## JSX
 
-The framework ships its own minimal JSX runtime. Set `jsxImportSource` to `"anpan"` and TSX just works — no React required. To use React or Preact as the island renderer, set `jsxImportSource` to `"react"` or `"preact"` instead (see [Using React or Preact](#using-react-or-preact)).
+The framework ships its own minimal JSX runtime. Set `jsxImportSource` to `"anpan"` and TSX just works - no React required. To use React or Preact as the island renderer, set `jsxImportSource` to `"react"` or `"preact"` instead (see [Using React or Preact](#using-react-or-preact)).
 
 ```json
 {
@@ -705,7 +705,7 @@ On the server, event handlers (`onclick`, `onchange`, etc.) are stripped from th
 
 ## Security headers
 
-Every response includes the following headers by default. These are safe, non-breaking defaults — override any of them via middleware if needed.
+Every response includes the following headers by default. These are safe, non-breaking defaults - override any of them via middleware if needed.
 
 | Header | Value |
 |--------|-------|
@@ -767,7 +767,7 @@ Returns a redirect `Response`. Default status is `302`. Allowed: `301`, `302`, `
 
 ### `cache(ttlMs, fn)`
 
-Wraps an async function with an in-memory TTL cache. Arguments are serialized to JSON as the cache key. Cache entries are evicted lazily on the next call after expiry — no background timers. Declare at module level so the cache is shared across requests.
+Wraps an async function with an in-memory TTL cache. Arguments are serialized to JSON as the cache key. Cache entries are evicted lazily on the next call after expiry - no background timers. Declare at module level so the cache is shared across requests.
 
 ```ts
 const getPosts = cache(30_000, async () => db.posts.findAll());

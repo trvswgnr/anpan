@@ -1,8 +1,8 @@
 # Publishes @travvy/anpan from the version in package.json on each push to main.
 # If that exact version is already on npm, the publish step is skipped (job still passes).
 #
-# Trusted publishing (OIDC): on npmjs.com → package @travvy/anpan → Settings →
-# Trusted publishing → GitHub Actions. Repository: trvswgnr / anpan. Workflow
+# Trusted publishing (OIDC): on npmjs.com -> package @travvy/anpan -> Settings ->
+# Trusted publishing -> GitHub Actions. Repository: trvswgnr / anpan. Workflow
 # filename must match this file: publish.yml. No NODE_AUTH_TOKEN secret needed
 # for publish when that is configured (GitHub-hosted runners only).
 

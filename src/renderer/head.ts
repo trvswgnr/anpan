@@ -1,9 +1,7 @@
 import { renderToString } from "../jsx/runtime.ts";
 import type { VNode, Child } from "../jsx/types.ts";
 
-// ---------------------------------------------------------------------------
-// HeadContext — collected during a single render pass
-// ---------------------------------------------------------------------------
+// HeadContext - collected during a single render pass
 
 export interface HeadEntry {
   type: "title" | "meta" | "link" | "script" | "style" | "raw";
@@ -40,7 +38,7 @@ export class HeadContext {
 
       if (tag === "title") {
         type = "title";
-        key = "title"; // always deduplicated — last wins
+        key = "title"; // always deduplicated - last wins
       } else if (tag === "meta") {
         type = "meta";
         const props = vnode.props as Record<string, unknown>;
@@ -89,9 +87,7 @@ export class HeadContext {
   }
 }
 
-// ---------------------------------------------------------------------------
 // AsyncLocalStorage-based context so <Head> can register from anywhere
-// ---------------------------------------------------------------------------
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
@@ -105,9 +101,7 @@ export function runWithHeadContext<T>(ctx: HeadContext, fn: () => T): T {
   return headStorage.run(ctx, fn);
 }
 
-// ---------------------------------------------------------------------------
-// <Head> component — registers children into the nearest HeadContext
-// ---------------------------------------------------------------------------
+// <Head> component - registers children into the nearest HeadContext
 
 import type { Props } from "../jsx/types.ts";
 import { FRAGMENT } from "../jsx/runtime.ts";
@@ -137,6 +131,6 @@ export function Head({ children }: Props): null {
   if (ctx && children !== undefined) {
     ctx.collect(children as Child);
   }
-  // Renders nothing inline — content is injected via HTMLRewriter
+  // Renders nothing inline - content is injected via HTMLRewriter
   return null;
 }

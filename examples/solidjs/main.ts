@@ -28,7 +28,7 @@ const solidAdapter: JsxFrameworkAdapter = {
     renderToString((comp as (p: unknown) => unknown)(props)),
 
   /**
-   * Client-side: empty snippet — let anpan's built-in island reconciler
+   * Client-side: empty snippet - let anpan's built-in island reconciler
    * handle mounting. The reconciler calls component(props) and diffs the
    * returned VNode tree against the DOM, re-rendering on state changes.
    */

@@ -13,7 +13,7 @@ export type Props = Record<string, unknown> & { children?: Child | Child[] };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ComponentType<P = any> = (props: P) => VNode | Primitive | null;
 
-// JSX intrinsic element types (subset — extend as needed)
+// JSX intrinsic element types (subset - extend as needed)
 export type HTMLTag = keyof HTMLElementTagNameMap | string;
 
 declare global {

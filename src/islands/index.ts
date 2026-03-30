@@ -7,9 +7,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export type { IslandManifest, IslandMeta } from "./types.ts";
 export type { JsxFrameworkAdapter } from "./types.ts";
 
-// ---------------------------------------------------------------------------
-// Island registry — per-request context
-// ---------------------------------------------------------------------------
+// Island registry - per-request context
 
 const islandStorage = new AsyncLocalStorage<IslandRegistry>();
 
@@ -38,9 +36,7 @@ export class IslandRegistry {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Global server-side adapter — set once at startup by createServer()
-// ---------------------------------------------------------------------------
+// Global server-side adapter - set once at startup by createServer()
 
 let _serverAdapter: JsxFrameworkAdapter | null = null;
 
@@ -52,9 +48,7 @@ export function setServerAdapter(adapter: JsxFrameworkAdapter | null): void {
   _serverAdapter = adapter;
 }
 
-// ---------------------------------------------------------------------------
-// island() wrapper — marks a component for client-side hydration
-// ---------------------------------------------------------------------------
+// island() wrapper - marks a component for client-side hydration
 
 export interface IslandOptions<P> {
   /** Export name, usually "default" */
@@ -77,7 +71,7 @@ export interface IslandOptions<P> {
  * Usage:
  *   export default island(Counter, import.meta.path);
  *
- * The auto-island plugin generates this call automatically — you rarely need
+ * The auto-island plugin generates this call automatically - you rarely need
  * to write it by hand.
  */
 export function island<P>(
@@ -156,9 +150,7 @@ export function stableId(filePath: string, exportName: string): string {
   return `${base}-${hash}`;
 }
 
-// ---------------------------------------------------------------------------
 // Scan for .island.tsx files (used by bundler at startup)
-// ---------------------------------------------------------------------------
 
 /**
  * Find all `.island.{tsx,ts,jsx,js}` files under rootDir.
@@ -173,11 +165,9 @@ export async function scanIslandFiles(rootDir: string): Promise<string[]> {
   return files;
 }
 
-// ---------------------------------------------------------------------------
 // Re-export useState for use inside island components (client-side only)
 // This is a placeholder that throws on the server to signal misuse.
 // The actual implementation is in client-runtime.ts (bundled for browser).
-// ---------------------------------------------------------------------------
 
 /**
  * State hook for island components.

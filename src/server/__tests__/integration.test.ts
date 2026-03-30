@@ -123,7 +123,7 @@ describe("streaming", () => {
 describe("static files", () => {
   test("serves files from public dir", async () => {
     const res = await fetch(`${base}/favicon.ico`);
-    // File exists — Bun returns 200 for non-empty files, 204 for empty ones
+    // File exists - Bun returns 200 for non-empty files, 204 for empty ones
     expect([200, 204]).toContain(res.status);
   });
 

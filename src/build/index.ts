@@ -9,7 +9,7 @@ export interface BuildConfig {
   outDir?: string;
   /**
    * Custom JSX framework adapter for islands.
-   * React and Preact are auto-detected from tsconfig — no adapter needed.
+   * React and Preact are auto-detected from tsconfig - no adapter needed.
    */
   jsxFramework?: JsxFrameworkAdapter;
 }
@@ -23,7 +23,7 @@ export async function build(config: BuildConfig = {}): Promise<void> {
 
   console.log("[build] Bundling islands...");
   const { manifest } = await bundleIslands(pagesDir, islandOutDir, adapter);
-  console.log(`[build] Bundled ${manifest.size} island(s) → ${islandOutDir}`);
+  console.log(`[build] Bundled ${manifest.size} island(s) -> ${islandOutDir}`);
 
   // Write manifest JSON for reference
   const manifestPath = join(outDir, "island-manifest.json");

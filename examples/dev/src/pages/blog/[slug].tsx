@@ -6,7 +6,7 @@ export default function BlogPost({ params }: PageProps) {
   return (
     <>
       <Head>
-        <title>{slug} — Blog</title>
+        <title>{slug} - Blog</title>
       </Head>
       <h1>Blog: {slug}</h1>
       <p>This is a dynamically routed page. Slug parameter: <code>{slug}</code></p>

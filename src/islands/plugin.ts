@@ -3,7 +3,6 @@ import { join } from "node:path";
 import type { JsxFrameworkAdapter } from "./types.ts";
 import { getBuiltinFramework } from "./builtin-adapters.ts";
 
-// ---------------------------------------------------------------------------
 // Auto-island Bun plugin
 //
 // Server mode (registered via Bun.plugin() in createServer):
@@ -31,12 +30,11 @@ import { getBuiltinFramework } from "./builtin-adapters.ts";
 //   client-runtime.ts so that:
 //     a) useState is the reactive browser version (not the server noop)
 //     b) the node:crypto / node:async_hooks server code is never bundled
-//   The default export is left as the raw component — island() is identity
+//   The default export is left as the raw component - island() is identity
 //   in the browser so wrapping is unnecessary.
 //
 //   For React/Preact/custom adapters, a __islandMount named export is appended
 //   so the client runtime can use the framework's own render/hydrate API.
-// ---------------------------------------------------------------------------
 
 export interface IslandPluginOptions {
   adapter?: JsxFrameworkAdapter | null;
@@ -159,9 +157,7 @@ export function createIslandPlugin(
   };
 }
 
-// ---------------------------------------------------------------------------
 // Transform helpers
-// ---------------------------------------------------------------------------
 
 function detectLoader(path: string): "tsx" | "ts" | "jsx" | "js" {
   if (path.endsWith(".tsx")) return "tsx";
@@ -195,7 +191,7 @@ function extractAndNormalizeDefaultExport(source: string): {
     return { name: idMatch[1]!, transformed: source };
   }
 
-  // Pattern 3: export default arrow/expression — normalise to named const
+  // Pattern 3: export default arrow/expression - normalise to named const
   const exprMatch = source.match(
     /export\s+default\s+((?:async\s+)?(?:function\s*\*?\s*\(|\([^)]*\)\s*=>|[a-zA-Z_$][\w$]*\s*=>))/,
   );
@@ -214,7 +210,7 @@ function autoWrap(source: string, filePath: string): string {
   const escaped = JSON.stringify(filePath);
 
   // Pattern 1: export default function Name(...)
-  //   → strip `export default`, keep `function Name(...)`
+  //   -> strip `export default`, keep `function Name(...)`
   const funcDeclMatch = source.match(/export\s+default\s+function\s+(\w+)/);
   if (funcDeclMatch) {
     const name = funcDeclMatch[1]!;
@@ -289,7 +285,7 @@ function injectServerRender(
     `export default __i__\\((\\w+),${escaped}\\);?\\s*$`,
   );
   const match = wrapped.match(callRe);
-  if (!match) return wrapped; // couldn't find the call — leave unchanged
+  if (!match) return wrapped; // couldn't find the call - leave unchanged
 
   const name = match[1]!;
 

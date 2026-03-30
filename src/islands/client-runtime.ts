@@ -4,15 +4,13 @@
 // Injected into every page that contains islands via:
 //   <script type="module" src="/_islands/__runtime.js"></script>
 
-// ---------------------------------------------------------------------------
 // Minimal reactive state (no React, no VDOM)
-// ---------------------------------------------------------------------------
 
 type Setter<T> = (newVal: T | ((prev: T) => T)) => void;
 type StateSlot<T> = { value: T; listeners: Set<() => void> };
 
 // Each island instance gets its own state store keyed by slot index.
-// We use a per-instance cursor approach — same as React's rules of hooks.
+// We use a per-instance cursor approach - same as React's rules of hooks.
 let currentSlots: StateSlot<unknown>[] | null = null;
 let currentSlotIdx = 0;
 
@@ -39,9 +37,7 @@ export function useState<T>(initial: T): [T, Setter<T>] {
   return [slot.value, setter];
 }
 
-// ---------------------------------------------------------------------------
 // Minimal h() and Fragment for the browser (mirrors server runtime)
-// ---------------------------------------------------------------------------
 
 const VOID_TAGS = new Set([
   "area", "base", "br", "col", "embed", "hr", "img", "input",
@@ -68,9 +64,7 @@ export function h(
 
 export const Fragment = Symbol("Fragment");
 
-// ---------------------------------------------------------------------------
-// DOM reconciler — diffs VNode tree against real DOM
-// ---------------------------------------------------------------------------
+// DOM reconciler - diffs VNode tree against real DOM
 
 function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
   if (node === null || node === undefined || node === false) return;
@@ -128,9 +122,7 @@ function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
   parent.appendChild(el);
 }
 
-// ---------------------------------------------------------------------------
-// Mount — replaces placeholder with live component
-// ---------------------------------------------------------------------------
+// Mount - replaces placeholder with live component
 
 function mount(
   component: (props: Record<string, unknown>) => VNode | null,
@@ -170,9 +162,7 @@ function mount(
   render();
 }
 
-// ---------------------------------------------------------------------------
-// Hydration bootstrap — runs on DOMContentLoaded
-// ---------------------------------------------------------------------------
+// Hydration bootstrap - runs on DOMContentLoaded
 
 type IslandModule = {
   default?: (props: Record<string, unknown>) => VNode | null;

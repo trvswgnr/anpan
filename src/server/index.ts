@@ -22,9 +22,7 @@ import type { IslandBundleResult, JsxFrameworkAdapter } from "../islands/bundler
 import type { IslandManifest } from "../islands/types.ts";
 import { setServerAdapter } from "../islands/index.ts";
 
-// ---------------------------------------------------------------------------
 // Config
-// ---------------------------------------------------------------------------
 
 export interface ServerConfig {
   /** Directory containing page files. Default: "./src/pages" */
@@ -46,7 +44,7 @@ export interface ServerConfig {
    * Custom JSX framework adapter for islands (React, Preact, Solid, etc.).
    *
    * React and Preact are auto-detected from `jsxImportSource` in `tsconfig.json`
-   * — no adapter needed for those. Supply this for any other framework.
+   * - no adapter needed for those. Supply this for any other framework.
    *
    * @example Solid.js
    * ```ts
@@ -64,9 +62,7 @@ export interface ServerConfig {
   jsxFramework?: JsxFrameworkAdapter;
 }
 
-// ---------------------------------------------------------------------------
 // createServer
-// ---------------------------------------------------------------------------
 
 /**
  * Create and start the HTTP server.
@@ -127,7 +123,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // Scan routes
   let routes: Route[] = await scanRoutes(pagesDir);
 
-  // Bundle islands — scan from srcDir, not just pagesDir
+  // Bundle islands - scan from srcDir, not just pagesDir
   let { manifest: islandManifest, runtimeUrl: islandRuntimeUrl }: IslandBundleResult =
     await bundleIslands(srcDir, islandOutDir, adapter);
 
@@ -228,9 +224,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   return server;
 }
 
-// ---------------------------------------------------------------------------
 // API route handler
-// ---------------------------------------------------------------------------
 
 export type ApiHandler = (
   req: Request,
@@ -263,9 +257,7 @@ async function handleApiRoute(
   return handler(req, { params });
 }
 
-// ---------------------------------------------------------------------------
 // Utilities
-// ---------------------------------------------------------------------------
 
 function resolve(path: string): string {
   if (path.startsWith("/")) return path;
@@ -304,7 +296,7 @@ async function maybeCompress(req: Request, res: Response): Promise<Response> {
 
 /**
  * Adds default security headers to every response.
- * These are safe, non-breaking defaults — apps can override via middleware.
+ * These are safe, non-breaking defaults - apps can override via middleware.
  */
 function applySecurityHeaders(res: Response): Response {
   const headers = new Headers(res.headers);

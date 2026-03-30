@@ -9,7 +9,7 @@ export async function serveStatic(
   pathname: string,
 ): Promise<Response | null> {
   const root = resolve(publicDir);
-  // resolve() normalises `.` and `..` — if the result escapes root, reject it.
+  // resolve() normalises `.` and `..` - if the result escapes root, reject it.
   const filePath = resolve(join(root, pathname));
   if (!filePath.startsWith(root + "/") && filePath !== root) return null;
 

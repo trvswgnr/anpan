@@ -95,9 +95,7 @@ async function waitForHydration(page: Page, timeout = 8000): Promise<void> {
   );
 }
 
-// ---------------------------------------------------------------------------
 // ThemeToggle island
-// ---------------------------------------------------------------------------
 
 describe("ThemeToggle island", () => {
   test("renders server snapshot before JS loads", async () => {
@@ -144,9 +142,7 @@ describe("ThemeToggle island", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // LikeButton island
-// ---------------------------------------------------------------------------
 
 describe("LikeButton island", () => {
   test("renders server-side like count before JS loads", async () => {
@@ -207,7 +203,7 @@ describe("LikeButton island", () => {
     });
 
     // Before: empty heart
-    expect(await page.locator(".like-icon").textContent()).toBe("♡");
+    expect(await page.locator(".like-icon").textContent()).toBe("o");
 
     await btn.click();
 
@@ -215,14 +211,12 @@ describe("LikeButton island", () => {
     await page.locator(".like-btn-liked").waitFor({ state: "attached", timeout: 3000 });
 
     expect(await btn.isDisabled()).toBe(true);
-    expect(await page.locator(".like-icon").textContent()).toBe("♥");
+    expect(await page.locator(".like-icon").textContent()).toBe("*");
     await page.close();
   });
 });
 
-// ---------------------------------------------------------------------------
 // Multiple islands on the same page
-// ---------------------------------------------------------------------------
 
 describe("multiple islands on the same page", () => {
   test("ThemeToggle and LikeButton hydrate independently", async () => {
@@ -259,9 +253,7 @@ describe("multiple islands on the same page", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // SSR correctness
-// ---------------------------------------------------------------------------
 
 describe("SSR in browser", () => {
   test("page content visible without JavaScript", async () => {
@@ -284,7 +276,7 @@ describe("SSR in browser", () => {
     const res = await page.goto(`${base}/blog/this-slug-does-not-exist`);
     expect(res?.status()).toBe(404);
     const title = await page.title();
-    expect(title).toBe("404 Not Found — Bun Blog");
+    expect(title).toBe("404 Not Found - Bun Blog");
     await page.close();
   });
 
@@ -297,9 +289,7 @@ describe("SSR in browser", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Counter island interactivity — dev / react / preact / solidjs examples
-// ---------------------------------------------------------------------------
+// Counter island interactivity - dev / react / preact / solidjs examples
 
 type ExampleHandle = { base: string; proc: ReturnType<typeof Bun.spawn> };
 
@@ -335,9 +325,7 @@ async function clickCounterTimes(page: Page, plusBtn: string, countEl: string, n
   expect(await page.locator(countEl).textContent()).toBe(String(expected));
 }
 
-// ---------------------------------------------------------------------------
-// Counter island interactivity — all examples share one Chromium instance
-// ---------------------------------------------------------------------------
+// Counter island interactivity - all examples share one Chromium instance
 
 describe("Counter island interactivity", () => {
   let counterBrowser: Browser;
@@ -373,13 +361,13 @@ describe("Counter island interactivity", () => {
       await p.close();
     });
 
-    test("counter decrements on − click", async () => {
+    test("counter decrements on - click", async () => {
       const p = await counterPage();
       await p.goto(`${example.base}${indexPath}`);
       await waitForHydration(p);
       await p.locator("button:has-text('+')").click();
       await p.locator("button:has-text('+')").click();
-      await p.locator("button:has-text('−')").click();
+      await p.locator("button:has-text('-')").click();
       await p.waitForFunction(
         () => document.querySelector("span")?.textContent === "1",
         { timeout: 5000 },

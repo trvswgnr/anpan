@@ -19,7 +19,7 @@ export default function BlogPostPage({ data, params }: PageProps<typeof loader, 
   return (
     <>
       <Head>
-        <title>{post.title} — Bun Blog</title>
+        <title>{post.title} - Bun Blog</title>
         <meta name="description" content={post.summary} />
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={post.summary} />

@@ -17,7 +17,7 @@ export const REACT_ADAPTER: BuiltinAdapter = {
   [BUILTIN_FRAMEWORK]: "react",
   serverRender: () => {
     throw new Error(
-      "REACT_ADAPTER.serverRender should not be called directly — " +
+      "REACT_ADAPTER.serverRender should not be called directly - " +
       "the plugin injects React renderToString inline.",
     );
   },
@@ -31,7 +31,7 @@ export const PREACT_ADAPTER: BuiltinAdapter = {
   [BUILTIN_FRAMEWORK]: "preact",
   serverRender: () => {
     throw new Error(
-      "PREACT_ADAPTER.serverRender should not be called directly — " +
+      "PREACT_ADAPTER.serverRender should not be called directly - " +
       "the plugin injects Preact renderToString inline.",
     );
   },

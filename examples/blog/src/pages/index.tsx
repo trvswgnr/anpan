@@ -8,7 +8,7 @@ export default function HomePage(_props: PageProps) {
   return (
     <>
       <Head>
-        <title>Bun Blog — A framework demo</title>
+        <title>Bun Blog - A framework demo</title>
         <meta name="description" content="A demo blog built with anpan." />
       </Head>
 

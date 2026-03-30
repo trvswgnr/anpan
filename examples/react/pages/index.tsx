@@ -13,7 +13,7 @@ export default function HomePage(_props: PageProps) {
         <code>createRoot</code> for client-side hydration.
       </p>
       <p>
-        The counter below is an interactive island — React's own{" "}
+        The counter below is an interactive island - React's own{" "}
         <code>useState</code> hook keeps state on the client:
       </p>
       <Counter initial={0} />

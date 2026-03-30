@@ -5,7 +5,7 @@ export default function HomePage(_props: PageProps) {
   return (
     <>
       <Head>
-        <title>Home — anpan</title>
+        <title>Home - anpan</title>
         <meta name="description" content="A Bun-native SSR framework" />
       </Head>
       <h1>Welcome to anpan</h1>

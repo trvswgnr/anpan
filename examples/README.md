@@ -4,11 +4,11 @@ Sample apps for trying anpan from a **clone of this repo**. They are useful for 
 
 ## Prerequisites
 
-Same as the main project: [Bun](https://bun.sh) ≥ 1.1.0.
+Same as the main project: [Bun](https://bun.sh) >= 1.1.0.
 
 ## How these examples resolve `anpan`
 
-Each example’s `tsconfig.json` maps the `anpan` package to `../../src/...` (see [examples/dev/tsconfig.json](dev/tsconfig.json)). Entry files such as [`dev/main.ts`](dev/main.ts) import from `"anpan"` or from `../../src/index.ts` so you do **not** need `bun link` or a published package to run them.
+Each example's `tsconfig.json` maps the `anpan` package to `../../src/...` (see [examples/dev/tsconfig.json](dev/tsconfig.json)). Entry files such as [`dev/main.ts`](dev/main.ts) import from `"anpan"` or from `../../src/index.ts` so you do **not** need `bun link` or a published package to run them.
 
 ## Working directory matters
 
@@ -20,7 +20,7 @@ After `bun install` at the repo root (for tests and tooling):
 
 | Script | Example |
 |--------|---------|
-| `bun dev` | [`dev`](dev/) — dev server with hot reload |
+| `bun dev` | [`dev`](dev/) - dev server with hot reload |
 | `bun run example:blog` | [`blog`](blog/) |
 | `bun run example:react` | [`react`](react/) |
 | `bun run example:preact` | [`preact`](preact/) |

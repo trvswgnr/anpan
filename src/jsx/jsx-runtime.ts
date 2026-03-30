@@ -1,6 +1,6 @@
 // Required by the TypeScript JSX transform when jsxImportSource is set.
 // The compiler imports { jsx, jsxs, Fragment } from "<jsxImportSource>/jsx-runtime".
-// jsx/jsxs receive (type, props, key?) — children are already in props.children.
+// jsx/jsxs receive (type, props, key?) - children are already in props.children.
 import { h, FRAGMENT } from "./runtime.ts";
 import type { ComponentType, Props, VNode } from "./types.ts";
 

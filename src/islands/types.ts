@@ -3,7 +3,7 @@
  * the islands system. Pass to `createServer({ jsxFramework: ... })`.
  *
  * React and Preact are detected automatically from `jsxImportSource` in
- * `tsconfig.json` — no adapter needed for those. Use this for anything else.
+ * `tsconfig.json` - no adapter needed for those. Use this for anything else.
  */
 export interface JsxFrameworkAdapter {
   /**
@@ -21,7 +21,7 @@ export interface JsxFrameworkAdapter {
    * It **must** export a named function `__islandMount`:
    *   `(el: HTMLElement, props: Record<string, unknown>) => void`
    *
-   * Use `__COMP__` as a placeholder — it is replaced with the actual component
+   * Use `__COMP__` as a placeholder - it is replaced with the actual component
    * identifier extracted from the island file's default export.
    *
    * @example Solid.js

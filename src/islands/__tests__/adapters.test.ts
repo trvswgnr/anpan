@@ -14,9 +14,7 @@ import type { JsxFrameworkAdapter } from "../types.ts";
 
 const FIXTURES = join(import.meta.dir, "fixtures");
 
-// ---------------------------------------------------------------------------
 // detectJsxFramework
-// ---------------------------------------------------------------------------
 
 describe("detectJsxFramework", () => {
   test('returns "react" for jsxImportSource: "react"', async () => {
@@ -53,9 +51,7 @@ describe("detectJsxFramework", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // resolveJsxFramework
-// ---------------------------------------------------------------------------
 
 describe("resolveJsxFramework", () => {
   test("returns explicit adapter when provided (ignores tsconfig)", async () => {
@@ -89,14 +85,12 @@ describe("resolveJsxFramework", () => {
 
   test("returns null when explicit adapter is null", async () => {
     const result = await resolveJsxFramework(null, join(FIXTURES, "react"));
-    // null is treated as "no explicit adapter" → falls back to auto-detection
+    // null is treated as "no explicit adapter" -> falls back to auto-detection
     expect(result).toBe(REACT_ADAPTER);
   });
 });
 
-// ---------------------------------------------------------------------------
 // REACT_ADAPTER content
-// ---------------------------------------------------------------------------
 
 describe("REACT_ADAPTER", () => {
   test("clientMountSnippet imports createElement from react", () => {
@@ -122,9 +116,7 @@ describe("REACT_ADAPTER", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // PREACT_ADAPTER content
-// ---------------------------------------------------------------------------
 
 describe("PREACT_ADAPTER", () => {
   test("clientMountSnippet imports h and render from preact", () => {
@@ -148,9 +140,7 @@ describe("PREACT_ADAPTER", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // getBuiltinFramework
-// ---------------------------------------------------------------------------
 
 describe("getBuiltinFramework", () => {
   test('returns "react" for REACT_ADAPTER', () => {
@@ -170,9 +160,7 @@ describe("getBuiltinFramework", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Custom adapter (SolidJS-style) — interface compliance
-// ---------------------------------------------------------------------------
+// Custom adapter (SolidJS-style) - interface compliance
 
 describe("custom adapter (SolidJS-style)", () => {
   const solidAdapter: JsxFrameworkAdapter = {

@@ -1,4 +1,4 @@
-/* ── Reset & base ────────────────────────────────────────────── */
+/* -- Reset & base ---------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -40,14 +40,14 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; color: var(--accent-hover); }
 
-/* ── Layout helpers ──────────────────────────────────────────── */
+/* -- Layout helpers -------------------------------------------- */
 .container {
   max-width: 720px;
   margin: 0 auto;
   padding: 0 1.25rem;
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
+/* -- Header ---------------------------------------------------- */
 .site-header {
   border-bottom: 1px solid var(--border);
   padding: 1rem 0;
@@ -85,7 +85,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 .nav-link:hover { background: var(--bg-secondary); color: var(--text); text-decoration: none; }
 .nav-link.active { color: var(--text); font-weight: 500; }
 
-/* ── Main & footer ───────────────────────────────────────────── */
+/* -- Main & footer --------------------------------------------- */
 .site-main { flex: 1; padding: 2.5rem 0; }
 
 .site-footer {
@@ -95,12 +95,12 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
   font-size: 0.85rem;
 }
 
-/* ── Hero ────────────────────────────────────────────────────── */
+/* -- Hero ------------------------------------------------------ */
 .hero { padding: 2rem 0 2.5rem; }
 .hero h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.75rem; }
 .hero-sub { color: var(--text-muted); font-size: 1.1rem; max-width: 520px; }
 
-/* ── Post list ───────────────────────────────────────────────── */
+/* -- Post list ------------------------------------------------- */
 .post-list h2 { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1.25rem; font-weight: 500; }
 
 .post-card {
@@ -113,7 +113,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 .post-card a { color: var(--text); }
 .post-card a:hover { color: var(--accent); text-decoration: none; }
 
-/* ── Meta row ────────────────────────────────────────────────── */
+/* -- Meta row -------------------------------------------------- */
 .post-card-meta {
   display: flex;
   gap: 0.75rem;
@@ -124,7 +124,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 
 .post-summary { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0.75rem; }
 
-/* ── Tags ────────────────────────────────────────────────────── */
+/* -- Tags ------------------------------------------------------ */
 .post-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
 .tag {
@@ -141,7 +141,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 .tag:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 .tag-active { border-color: var(--accent); color: var(--accent); }
 
-/* ── Page header ─────────────────────────────────────────────── */
+/* -- Page header ----------------------------------------------- */
 .page-header {
   display: flex;
   align-items: baseline;
@@ -151,7 +151,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 .page-header h1 { font-size: 1.75rem; }
 .clear-filter { font-size: 0.85rem; color: var(--text-muted); }
 
-/* ── Full post ───────────────────────────────────────────────── */
+/* -- Full post ------------------------------------------------- */
 .post-full-header { margin-bottom: 2rem; }
 .post-full-header h1 { font-size: 2rem; line-height: 1.25; margin: 0.5rem 0 0.75rem; }
 .post-full-header .lead { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 1rem; }
@@ -181,7 +181,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 
 .back-link { font-size: 0.9rem; color: var(--text-muted); }
 
-/* ── Like button ─────────────────────────────────────────────── */
+/* -- Like button ----------------------------------------------- */
 .like-btn {
   display: inline-flex;
   align-items: center;
@@ -205,7 +205,7 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 .like-btn-loading { opacity: 0.6; cursor: wait; }
 .like-btn:disabled { cursor: not-allowed; }
 
-/* ── Theme toggle ────────────────────────────────────────────── */
+/* -- Theme toggle ---------------------------------------------- */
 .theme-toggle {
   background: none;
   border: 1px solid var(--border);
@@ -219,14 +219,14 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 }
 .theme-toggle:hover { border-color: var(--accent); }
 
-/* ── Prose (about page) ──────────────────────────────────────── */
+/* -- Prose (about page) ---------------------------------------- */
 .prose h1 { font-size: 2rem; margin-bottom: 1rem; }
 .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
 .prose p { color: var(--text); margin-bottom: 1rem; }
 .prose ul { margin: 0.5rem 0 1rem 1.5rem; }
 .prose li { margin-bottom: 0.35rem; }
 
-/* ── Error page ──────────────────────────────────────────────── */
+/* -- Error page ------------------------------------------------ */
 .error-page { text-align: center; padding: 4rem 0; }
 .error-page h1 { font-size: 5rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; }
 .error-page p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1.5rem; }
@@ -243,5 +243,5 @@ a:hover { text-decoration: underline; color: var(--accent-hover); }
 }
 .btn:hover { background: var(--accent-hover); color: #fff; text-decoration: none; }
 
-/* ── Empty state ─────────────────────────────────────────────── */
+/* -- Empty state ----------------------------------------------- */
 .empty-state { color: var(--text-muted); padding: 2rem 0; }

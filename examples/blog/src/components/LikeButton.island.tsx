@@ -37,10 +37,10 @@ export default function LikeButton({ slug, initialCount }: Props) {
       class={`like-btn${liked ? " like-btn-liked" : ""}${loading ? " like-btn-loading" : ""}${error ? " like-btn-error" : ""}`}
       onclick={handleClick}
       disabled={liked || loading}
-      aria-label={liked ? "Already liked" : error ? "Failed — try again" : "Like this post"}
+      aria-label={liked ? "Already liked" : error ? "Failed - try again" : "Like this post"}
       title={error ? "Something went wrong, try again" : undefined}
     >
-      <span class="like-icon">{liked ? "♥" : "♡"}</span>
+      <span class="like-icon">{liked ? "*" : "o"}</span>
       <span class="like-count">{count}</span>
     </button>
   );

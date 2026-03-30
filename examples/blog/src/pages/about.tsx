@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <>
       <Head>
-        <title>About — Bun Blog</title>
+        <title>About - Bun Blog</title>
         <meta name="description" content="About this blog and the framework it runs on." />
       </Head>
 

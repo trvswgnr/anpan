@@ -8,11 +8,11 @@ export default function HomePage(_props: PageProps) {
       <p>
         This page uses <strong>SolidJS</strong> for island components via a
         custom <code>jsxFramework</code> adapter in <code>main.ts</code>. Unlike
-        React and Preact, SolidJS is not auto-detected — the adapter must be
+        React and Preact, SolidJS is not auto-detected - the adapter must be
         provided explicitly.
       </p>
       <p>
-        The counter below is an interactive island — SolidJS's{" "}
+        The counter below is an interactive island - SolidJS's{" "}
         <code>createSignal</code> provides fine-grained reactivity on the
         client without a virtual DOM:
       </p>

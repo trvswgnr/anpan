@@ -20,7 +20,7 @@ export default function ThemeToggle(_props: Record<string, never>) {
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
       title={dark ? "Light mode" : "Dark mode"}
     >
-      {dark ? "☀" : "☾"}
+      {dark ? "L" : "D"}
     </button>
   );
 }

@@ -24,11 +24,9 @@ export interface RouteContext<TParams extends Record<string, string> = Record<st
   req: Request;
 }
 
-// ---------------------------------------------------------------------------
-// Loader — async data fetching run before the page component renders.
+// Loader - async data fetching run before the page component renders.
 // Returning a Response short-circuits rendering (redirect, notFound, etc.).
 // Returning { data } passes typed data to the page component.
-// ---------------------------------------------------------------------------
 
 export type LoaderReturn<TData = unknown> =
   | Response

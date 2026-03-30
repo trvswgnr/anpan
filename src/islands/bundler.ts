@@ -13,9 +13,7 @@ export const ISLANDS_OUT_DIR = join(ANPAN_DIR, "islands");
 export const ISLANDS_SERVE_PATH = "/_islands";
 export const RUNTIME_BUNDLE = "__runtime.js";
 
-// ---------------------------------------------------------------------------
-// Bundle result — manifest plus the URL where the runtime was written.
-// ---------------------------------------------------------------------------
+// Bundle result - manifest plus the URL where the runtime was written.
 
 export interface IslandBundleResult {
   manifest: IslandManifest;
@@ -23,9 +21,7 @@ export interface IslandBundleResult {
   runtimeUrl: string;
 }
 
-// ---------------------------------------------------------------------------
 // Framework detection from tsconfig.json
-// ---------------------------------------------------------------------------
 
 /** Which built-in framework (if any) is configured via tsconfig jsxImportSource. */
 export type BuiltInFramework = "react" | "preact" | null;
@@ -42,7 +38,7 @@ export async function detectJsxFramework(cwd: string): Promise<BuiltInFramework>
     if (src === "react" || src.startsWith("react-")) return "react";
     if (src === "preact" || src.startsWith("preact/")) return "preact";
   } catch {
-    // no tsconfig, parse error, or missing field — fall through
+    // no tsconfig, parse error, or missing field - fall through
   }
   return null;
 }
@@ -53,7 +49,7 @@ export async function detectJsxFramework(cwd: string): Promise<BuiltInFramework>
  * Resolution order:
  *   1. Explicit `jsxFramework` on `ServerConfig` / `BuildConfig`.
  *   2. Auto-detected React/Preact from `tsconfig.json`.
- *   3. `null` → built-in mini-reconciler.
+ *   3. `null` -> built-in mini-reconciler.
  */
 export async function resolveJsxFramework(
   explicitAdapter: JsxFrameworkAdapter | undefined | null,
@@ -66,9 +62,7 @@ export async function resolveJsxFramework(
   return null;
 }
 
-// ---------------------------------------------------------------------------
 // Build all island files using Bun.build()
-// ---------------------------------------------------------------------------
 
 export async function bundleIslands(
   rootDir: string,
@@ -80,7 +74,7 @@ export async function bundleIslands(
   const runtimeUrl = `${ISLANDS_SERVE_PATH}/${RUNTIME_BUNDLE}`;
 
   if (files.length === 0) {
-    // No islands — build the runtime alone with a fixed name.
+    // No islands - build the runtime alone with a fixed name.
     await Bun.build({
       entrypoints: [runtimeEntry],
       outdir: outDir,
@@ -174,9 +168,7 @@ export async function bundleIslands(
   return { manifest, runtimeUrl };
 }
 
-// ---------------------------------------------------------------------------
 // Serve a file from the islands output directory
-// ---------------------------------------------------------------------------
 
 export async function serveIsland(
   outDir: string,

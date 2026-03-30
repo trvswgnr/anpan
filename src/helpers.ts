@@ -1,6 +1,4 @@
-// ---------------------------------------------------------------------------
-// Response helpers — return these from a loader to control the HTTP response.
-// ---------------------------------------------------------------------------
+// Response helpers - return these from a loader to control the HTTP response.
 
 /**
  * Return a 404 response from a loader.
@@ -29,22 +27,20 @@ export function redirect(url: string, status: 301 | 302 | 307 | 308 = 302): Resp
   return new Response(null, { status, headers: { Location: url } });
 }
 
-// ---------------------------------------------------------------------------
 // Caching helpers
-// ---------------------------------------------------------------------------
 
 /**
  * Wrap an async function with an in-memory TTL cache.
  *
  * Arguments are serialized to JSON to form the cache key, so they must be
  * JSON-serializable. Cache entries are evicted lazily on the next call after
- * they expire — no background timers.
+ * they expire - no background timers.
  *
  * @param ttlMs   Time-to-live in milliseconds.
  * @param fn      The async function to memoize.
  *
  * @example
- * // Module-level — one cache shared across all requests.
+ * // Module-level - one cache shared across all requests.
  * const getPost = cache(60_000, async (slug: string) => {
  *   return await db.posts.findOne(slug);
  * });
