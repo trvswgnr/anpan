@@ -1,5 +1,5 @@
-import { createDevServer } from "../../src/index.ts";
-import type { Middleware } from "../../src/index.ts";
+import { createDevServer } from "anpan";
+import type { Middleware } from "anpan";
 
 const logger: Middleware = async (req, next) => {
   const start = Date.now();
@@ -9,7 +9,7 @@ const logger: Middleware = async (req, next) => {
 };
 
 const server = await createDevServer({
-  pagesDir: "./pages",
+  pagesDir: "./src/pages",
   publicDir: "./public",
   middleware: [logger],
   port: parseInt(process.env.PORT ?? "3000"),

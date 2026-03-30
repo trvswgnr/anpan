@@ -8,5 +8,5 @@
       "anpan/jsx-dev-runtime": ["../../src/jsx/jsx-dev-runtime.ts"]
     }
   },
-  "include": ["pages/**/*", "components/**/*", "main.ts"]
+  "include": ["src/**/*", "main.ts"]
 }

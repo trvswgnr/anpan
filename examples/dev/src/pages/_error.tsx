@@ -1,4 +1,4 @@
-import { Head } from "../../../src/index.ts";
+import { Head } from "anpan";
 
 export default function ErrorPage() {
   return (

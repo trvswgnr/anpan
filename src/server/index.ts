@@ -283,6 +283,8 @@ async function maybeCompress(req: Request, res: Response): Promise<Response> {
   if (!res.body || res.headers.has("Content-Encoding")) return res;
 
   const ct = res.headers.get("Content-Type") ?? "";
+  // SSE must not be buffered by gzip; also breaks real-time delivery for some clients.
+  if (ct.includes("text/event-stream")) return res;
   if (!COMPRESSIBLE_RE.test(ct)) return res;
 
   const accept = req.headers.get("Accept-Encoding") ?? "";

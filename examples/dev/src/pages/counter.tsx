@@ -1,4 +1,4 @@
-import { Head } from "../../../src/index.ts";
+import { Head } from "anpan";
 import Counter from "../components/Counter.island.tsx";
 
 export default function CounterPage() {

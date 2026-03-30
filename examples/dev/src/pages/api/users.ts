@@ -1,4 +1,4 @@
-import type { RouteContext } from "../../../../src/index.ts";
+import type { RouteContext } from "anpan";
 
 const USERS = [
   { id: 1, name: "Alice" },

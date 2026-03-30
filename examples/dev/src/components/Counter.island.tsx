@@ -1,4 +1,4 @@
-import { island, useState } from "../../../src/islands/index.ts";
+import { island, useState } from "anpan/islands";
 
 interface CounterProps {
   initial?: number;

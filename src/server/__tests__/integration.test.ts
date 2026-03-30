@@ -2,9 +2,10 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { createServer } from "../index.ts";
 import { join } from "node:path";
 
-// Use the example app as the integration test fixture
-const PAGES_DIR = join(import.meta.dir, "../../../examples/dev/pages");
-const PUBLIC_DIR = join(import.meta.dir, "../../../examples/dev/public");
+// Use the example app as the integration test fixture (pages live under src/)
+const DEV_EXAMPLE = join(import.meta.dir, "../../../examples/dev");
+const PAGES_DIR = join(DEV_EXAMPLE, "src/pages");
+const PUBLIC_DIR = join(DEV_EXAMPLE, "public");
 
 let server: ReturnType<typeof Bun.serve>;
 let base: string;
