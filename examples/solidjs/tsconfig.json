@@ -1,7 +1,8 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "jsxImportSource": "solid-js",
+    "jsx": "react-jsx",
+    "jsxImportSource": "anpan",
     "paths": {
       "anpan": ["../../src/index.ts"],
       "anpan/islands": ["../../src/islands/index.ts"],

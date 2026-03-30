@@ -4,6 +4,7 @@
   "description": "A lightweight Bun-native SSR framework with TSX templating and islands architecture",
   "type": "module",
   "main": "./src/index.ts",
+  "files": ["src"],
   "exports": {
     ".": "./src/index.ts",
     "./islands": {

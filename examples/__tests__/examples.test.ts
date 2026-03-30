@@ -26,6 +26,17 @@ interface ServerHandle {
 
 /** Install npm/bun dependencies in the given directory (fast no-op if up to date). */
 function installDeps(dir: string): void {
+  // If node_modules already contains packages, skip the install to avoid
+  // potential hangs on local file-path dependencies (e.g. anpan: "../../").
+  try {
+    const entries = Array.from(
+      new Bun.Glob("*").scanSync({ cwd: dir + "/node_modules", onlyFiles: false }),
+    );
+    if (entries.length > 1) return;
+  } catch {
+    // node_modules doesn't exist yet — proceed with install
+  }
+
   const result = Bun.spawnSync(["bun", "install"], {
     cwd: dir,
     stdout: "pipe",

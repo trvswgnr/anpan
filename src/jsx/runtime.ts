@@ -109,8 +109,10 @@ export function renderToString(node: unknown): string {
 
   const vnode = node as VNode;
 
-  // Fragment
-  if (vnode.type === FRAGMENT || vnode.type === null) {
+  // Fragment — handles anpan's own FRAGMENT symbol as well as React/Preact
+  // fragment symbols (typeof symbol) so that pages compiled with React or
+  // Preact's jsx-runtime render correctly through anpan's renderToString.
+  if (vnode.type === FRAGMENT || vnode.type === null || typeof vnode.type === "symbol") {
     return renderToString(vnode.props.children);
   }
 
@@ -198,7 +200,10 @@ function renderNodeToController(
 
   const vnode = node as VNode;
 
-  if (vnode.type === FRAGMENT || vnode.type === null) {
+  // Fragment — handles anpan's own FRAGMENT symbol as well as React/Preact
+  // fragment symbols so pages compiled with React or Preact jsx-runtime render
+  // correctly through anpan's streaming renderer.
+  if (vnode.type === FRAGMENT || vnode.type === null || typeof vnode.type === "symbol") {
     renderNodeToController(vnode.props.children, controller);
     return;
   }

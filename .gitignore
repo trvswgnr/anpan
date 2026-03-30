@@ -1,4 +1,12 @@
 node_modules/
+# Track the manually-maintained anpan stub packages for examples that cannot
+# use bun install (circular local file-path dependency prevention).
+!examples/blog/node_modules/
+!examples/blog/node_modules/anpan/
+!examples/blog/node_modules/anpan/**
+!examples/solidjs/node_modules/
+!examples/solidjs/node_modules/anpan/
+!examples/solidjs/node_modules/anpan/**
 .anpan/
 dist/
 *.js.map

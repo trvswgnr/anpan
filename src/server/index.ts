@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve as resolvePath } from "node:path";
 import { scanRoutes, matchRoute } from "../router/index.ts";
 import type { Route } from "../router/types.ts";
 import { createIslandPlugin } from "../islands/plugin.ts";
@@ -87,6 +87,21 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 
   // Register the global adapter so island() wrappers use the right serverRender.
   setServerAdapter(adapter);
+
+  // Resolve anpan's JSX runtimes to their actual file paths so that
+  // dynamically-imported page .tsx files can find them even when `anpan` is
+  // not installed in the project's node_modules (e.g. examples that reference
+  // anpan via tsconfig paths only). Bun does not apply tsconfig `paths` when
+  // resolving the auto-injected jsxImportSource imports at runtime.
+  const jsxRuntimePath = resolvePath(import.meta.dir, "../jsx/jsx-runtime.ts");
+  const jsxDevRuntimePath = resolvePath(import.meta.dir, "../jsx/jsx-dev-runtime.ts");
+  Bun.plugin({
+    name: "anpan:jsx-runtime-resolve",
+    setup(build) {
+      build.onResolve({ filter: /^anpan\/jsx-runtime$/ }, () => ({ path: jsxRuntimePath }));
+      build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({ path: jsxDevRuntimePath }));
+    },
+  });
 
   // Register the auto-island plugin so .island.tsx files can omit the
   // island(Component, import.meta.path) boilerplate. Must happen before any

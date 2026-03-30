@@ -1,4 +1,4 @@
-import { createServer } from "anpan";
+import { createServer } from "../../src/index.ts";
 
 const server = await createServer({
   pagesDir: "./src/pages",

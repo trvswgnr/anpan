@@ -43,6 +43,8 @@ export interface IslandPluginOptions {
 }
 
 const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
+const JSX_RUNTIME = join(import.meta.dir, "../jsx/jsx-runtime.ts");
+const JSX_DEV_RUNTIME = join(import.meta.dir, "../jsx/jsx-dev-runtime.ts");
 const ISLANDS_IMPORT_RE = /from\s+["']anpan\/islands["']/g;
 
 export function createIslandPlugin(
@@ -53,6 +55,18 @@ export function createIslandPlugin(
   return {
     name: "anpan:auto-island",
     setup(build) {
+      if (mode === "browser") {
+        // Resolve anpan JSX runtimes to their actual file paths so Bun.build()
+        // can find them even when `anpan` is not installed in node_modules
+        // (e.g. when examples use tsconfig paths instead of a real dep).
+        build.onResolve({ filter: /^anpan\/jsx-runtime$/ }, () => ({
+          path: JSX_RUNTIME,
+        }));
+        build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({
+          path: JSX_DEV_RUNTIME,
+        }));
+      }
+
       build.onLoad({ filter: /\.island\.(tsx?|jsx?)$/ }, async (args) => {
         const source = await Bun.file(args.path).text();
         const loader = detectLoader(args.path);
