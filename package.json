@@ -1,6 +1,6 @@
 {
   "name": "@travvy/anpan",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A lightweight Bun-native SSR framework with TSX templating and islands architecture",
   "repository": {
     "type": "git",
