@@ -613,6 +613,15 @@ const server = await createDevServer({
 
 When a file changes, the server rebuilds routes and island bundles, then signals all connected browser tabs to reload. The SSE connection and reload script are injected automatically - no client-side setup required.
 
+### How dev reload works
+
+Each tab keeps a long-lived [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) connection to `/__dev/reload`. The tab **reloads only when the server sends a `reload` event** after a watched file changes—not on every network blip. The injected script closes that `EventSource` when you navigate away (`beforeunload` / `pagehide`) so the connection does not stick around across full page loads; otherwise, browsers can hit their HTTP/1.1 per-origin connection limit and appear “stuck” after several navigations.
+
+### Troubleshooting
+
+- **Tab stuck loading or odd behavior:** Hard refresh the page or close and reopen the tab. If you use a reverse proxy in front of the dev server, ensure it allows SSE (no buffering that blocks `text/event-stream`).
+- **After a hard server process restart** (e.g. `bun --hot` replacing the process): Refresh the browser once if the tab does not pick up changes; transient SSE errors rely on the browser’s automatic reconnect, and file-save reload still works once the server is back.
+
 You can also use Bun's `--hot` flag, which restarts the server process on file changes. Combine it with `createDevServer` to get both server-level hot reload and browser tab reload:
 
 ```sh
