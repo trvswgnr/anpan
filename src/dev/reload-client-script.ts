@@ -11,6 +11,9 @@
  * and connections leak, exhausting the HTTP/1.1 per-origin connection pool
  * after ~6 navigations. `pagehide` covers cases where `beforeunload` is unreliable
  * (e.g. some mobile / bfcache scenarios).
+ *
+ * The minified `try{es.close()}catch(e){}` is intentional: `close()` may throw if
+ * the connection is already closed.
  */
 export const DEV_RELOAD_CLIENT_SCRIPT =
   "(function(){var es=new EventSource('/__dev/reload');" +

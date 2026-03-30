@@ -4,6 +4,7 @@ import { scanRoutes, matchRoute } from "../router/index.ts";
 import type { Route } from "../router/types.ts";
 import { createIslandPlugin } from "../islands/plugin.ts";
 import { renderPage, renderErrorPage, renderNotFound } from "../renderer/index.ts";
+import { resolveProjectPath } from "./path-utils.ts";
 import { serveStatic } from "./static.ts";
 import { runMiddleware, type Middleware } from "../middleware/index.ts";
 import { createDevReloadSseMiddleware } from "../dev/reload-sse.ts";
@@ -107,9 +108,9 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // island files are dynamically imported.
   Bun.plugin(createIslandPlugin("server", { adapter }));
 
-  const pagesDir = resolve(config.pagesDir ?? "./src/pages");
-  const publicDir = resolve(config.publicDir ?? "./public");
-  const islandOutDir = resolve(ISLANDS_OUT_DIR);
+  const pagesDir = resolveProjectPath(config.pagesDir ?? "./src/pages");
+  const publicDir = resolveProjectPath(config.publicDir ?? "./public");
+  const islandOutDir = resolveProjectPath(ISLANDS_OUT_DIR);
   const isDev = config.dev ?? process.env.NODE_ENV !== "production";
   const devReload = isDev ? createDevReloadSseMiddleware() : null;
   const middleware: Middleware[] = devReload
@@ -119,7 +120,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   // Island scan root: explicit srcDir, or parent of pagesDir so that
   // sibling directories like components/ are included automatically.
   const srcDir = config.srcDir
-    ? resolve(config.srcDir)
+    ? resolveProjectPath(config.srcDir)
     : join(pagesDir, "..");
 
   // Scan routes
@@ -294,11 +295,6 @@ async function handleApiRoute(
 }
 
 // Utilities
-
-function resolve(path: string): string {
-  if (path.startsWith("/")) return path;
-  return join(process.cwd(), path);
-}
 
 const COMPRESSIBLE_RE = /text\/|application\/(json|javascript|xml|x-www-form-urlencoded)/;
 

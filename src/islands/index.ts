@@ -73,13 +73,12 @@ export interface IslandOptions<P> {
  * The auto-island plugin generates this call automatically - you rarely need
  * to write it by hand.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any -- island() accepts framework-specific components/returns */
 export function island<P>(
   /** React, Preact, Solid, or anpan component — return type is framework-specific. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: (props: P) => any,
   filePath: string,
   exportNameOrOptions?: string | IslandOptions<P>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): (props: P) => any {
   const exportName =
     typeof exportNameOrOptions === "string"
@@ -105,13 +104,15 @@ export function island<P>(
     } else if (_serverAdapter !== null) {
       try {
         snapshot = _serverAdapter.serverRender(component, props as Record<string, unknown>);
-      } catch {
+      } catch (err) {
+        console.error(`[islands] SSR snapshot failed (adapter) id=${id} file=${filePath}:`, err);
         snapshot = "";
       }
     } else {
       try {
         snapshot = builtinRenderToString(component(props));
-      } catch {
+      } catch (err) {
+        console.error(`[islands] SSR snapshot failed (builtin) id=${id} file=${filePath}:`, err);
         snapshot = "";
       }
     }
@@ -142,6 +143,7 @@ export function island<P>(
 
   return IslandWrapper as (props: P) => any;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function stableId(filePath: string, exportName: string): string {
   const hash = createHash("sha1")
@@ -166,10 +168,6 @@ export async function scanIslandFiles(rootDir: string): Promise<string[]> {
   }
   return files;
 }
-
-// Re-export useState for use inside island components (client-side only)
-// This is a placeholder that throws on the server to signal misuse.
-// The actual implementation is in client-runtime.ts (bundled for browser).
 
 /**
  * State hook for island components.

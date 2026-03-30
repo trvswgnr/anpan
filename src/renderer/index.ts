@@ -5,7 +5,6 @@ import { IslandRegistry, runWithIslandRegistry } from "../islands/index.ts";
 import type { IslandManifest } from "../islands/types.ts";
 import { findLayouts } from "../router/index.ts";
 import type { Route, RouteContext, RouteMatch, Loader, LoaderReturn } from "../router/types.ts";
-import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
 import { DEV_RELOAD_CLIENT_SCRIPT } from "../dev/reload-client-script.ts";
 import {
   CONTENT_MARKER_HTML,
@@ -266,17 +265,29 @@ export async function renderErrorPage(
   const logError = ctx.logError ?? console.error.bind(console);
   const errorRoute = allRoutes.find((r) => r.type === "error");
 
+  let customErrorPageFailure: unknown;
   if (errorRoute) {
     try {
       return await renderPage({ ...ctx, match: { route: errorRoute, params: {} } });
     } catch (err) {
       logError("[renderer] Custom _error page failed:", err);
+      customErrorPageFailure = err;
     }
   }
+
+  const secondaryDev =
+    isDev && customErrorPageFailure !== undefined
+      ? `<h2>Custom _error page also failed</h2><pre>${escapeHtml(
+          customErrorPageFailure instanceof Error
+            ? (customErrorPageFailure.stack ?? customErrorPageFailure.message)
+            : String(customErrorPageFailure),
+        )}</pre>`
+      : "";
 
   const html = isDev
     ? `<!DOCTYPE html><html><head><title>Error</title></head><body>` +
       `<h1>500 Internal Server Error</h1><pre>${escapeHtml(error.stack ?? error.message)}</pre>` +
+      secondaryDev +
       `</body></html>`
     : `<!DOCTYPE html><html><head><title>Error</title></head><body><h1>500 Internal Server Error</h1></body></html>`;
 
@@ -287,7 +298,7 @@ export async function renderErrorPage(
 }
 
 export async function renderNotFound(ctx: RenderContext): Promise<Response> {
-  const { allRoutes } = ctx;
+  const { allRoutes, isDev } = ctx;
   const logError = ctx.logError ?? console.error.bind(console);
   const notFoundRoute = allRoutes.find((r) => r.type === "notfound");
 
@@ -297,6 +308,18 @@ export async function renderNotFound(ctx: RenderContext): Promise<Response> {
       return new Response(res.body, { status: 404, headers: res.headers });
     } catch (err) {
       logError("[renderer] Custom _404 page failed:", err);
+      if (isDev) {
+        const detail =
+          err instanceof Error ? (err.stack ?? err.message) : String(err);
+        return new Response(
+          `<!DOCTYPE html><html><head><title>404 Not Found</title></head><body>` +
+            `<h1>404 Not Found</h1>` +
+            `<h2>Custom _404 page failed</h2>` +
+            `<pre>${escapeHtml(detail)}</pre>` +
+            `</body></html>`,
+          { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } },
+        );
+      }
     }
   }
 

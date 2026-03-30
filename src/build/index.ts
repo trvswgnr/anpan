@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { resolveProjectPath } from "../server/path-utils.ts";
 import {
   ANPAN_DIR,
   bundleIslands,
@@ -28,9 +29,9 @@ export interface BuildConfig {
 
 export async function build(config: BuildConfig = {}): Promise<void> {
   const log = config.logger ?? console;
-  const pagesDir = resolve(config.pagesDir ?? "./src/pages");
-  const islandRoot = config.srcDir ? resolve(config.srcDir) : join(pagesDir, "..");
-  const outDir = resolve(config.outDir ?? ANPAN_DIR);
+  const pagesDir = resolveProjectPath(config.pagesDir ?? "./src/pages");
+  const islandRoot = config.srcDir ? resolveProjectPath(config.srcDir) : join(pagesDir, "..");
+  const outDir = resolveProjectPath(config.outDir ?? ANPAN_DIR);
   const islandOutDir = join(outDir, "islands");
 
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
@@ -49,11 +50,6 @@ export async function build(config: BuildConfig = {}): Promise<void> {
   );
   log.log(`[build] Manifest written to ${manifestPath}`);
   log.log("[build] Done.");
-}
-
-function resolve(path: string): string {
-  if (path.startsWith("/")) return path;
-  return join(process.cwd(), path);
 }
 
 // Run if called directly: bun run src/build/index.ts
