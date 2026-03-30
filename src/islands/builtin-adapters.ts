@@ -24,7 +24,7 @@ export const REACT_ADAPTER: BuiltinAdapter = {
   clientMountSnippet:
     `import{createElement as __ce__}from"react";` +
     `import{createRoot as __cr__}from"react-dom/client";` +
-    `export const __islandMount=(el,props)=>__cr__(el).render(__ce__(__COMP__,props));`,
+    `export const __islandMount=(el,props)=>{__cr__(el).render(__ce__(__COMP__,props));el.dataset.mounted="1";};`,
 };
 
 export const PREACT_ADAPTER: BuiltinAdapter = {
@@ -37,7 +37,7 @@ export const PREACT_ADAPTER: BuiltinAdapter = {
   },
   clientMountSnippet:
     `import{h as __ph__,render as __pr__}from"preact";` +
-    `export const __islandMount=(el,props)=>__pr__(__ph__(__COMP__,props),el);`,
+    `export const __islandMount=(el,props)=>{__pr__(__ph__(__COMP__,props),el);el.dataset.mounted="1";};`,
 };
 
 export function getBuiltinFramework(adapter: JsxFrameworkAdapter): BuiltinFrameworkMarker | null {

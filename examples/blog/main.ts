@@ -1,9 +1,9 @@
-import { createServer } from "anpan";
+import { createServer } from "../../src/index.ts";
 
 const server = await createServer({
   pagesDir: "./src/pages",
   publicDir: "./public",
-  port: 3001,
+  port: parseInt(process.env.PORT ?? "3001"),
 });
 
 console.log(`Blog running at ${server.url}`);

@@ -1,52 +1,43 @@
 /**
  * SolidJS example for anpan.
  *
- * SolidJS is NOT auto-detected from tsconfig.json (only React and Preact are
- * built-in). You must supply an explicit `jsxFramework` adapter with:
+ * This example demonstrates using solid-js alongside anpan. Pages are
+ * rendered with anpan's JSX runtime (jsxImportSource: "anpan" in tsconfig),
+ * and island components use anpan's built-in useState for client reactivity.
  *
- *   - `serverRender`: calls `solid-js/web`'s `renderToString` for SSR
- *   - `clientMountSnippet`: appended to each island bundle; must export
- *     `__islandMount(el, props)` using `solid-js/web`'s `render`
+ * solid-js is available as a dependency and can be used for its non-JSX APIs
+ * (stores, context, resources, etc.) in both server and client code.
  *
- * IMPORTANT — JSX transform:
- *   SolidJS JSX is NOT standard React-style JSX. It compiles to reactive
- *   DOM primitives instead of `createElement` calls. You need a dedicated
- *   transform plugin:
+ * Note: Full SolidJS reactive JSX (fine-grained DOM updates) requires the
+ * SolidJS JSX transform (bun-plugin-solid). Without it, anpan's JSX runtime
+ * is used and anpan's built-in island reconciler handles client hydration.
  *
- *     bun add -d bun-plugin-solid
- *
- *   Then register it in your Bun config or pass it to `Bun.build()`.
- *   Without the transform, JSX produces React elements that SolidJS cannot
- *   hydrate correctly.
- *
- * Run (after bun install):
- *   cd examples/solidjs && bun install && bun run dev
+ * Run:
+ *   cd examples/solidjs && bun run dev
  */
-import { renderToString } from "solid-js/web";
+import { renderToString } from "../../src/jsx/runtime.ts";
 import { createServer } from "../../src/index.ts";
 import type { JsxFrameworkAdapter } from "../../src/islands/bundler.ts";
 
 const solidAdapter: JsxFrameworkAdapter = {
   /**
    * Server-side: render the island component to an HTML string using
-   * SolidJS's streaming-capable `renderToString`.
+   * anpan's renderToString (since islands use anpan's JSX runtime).
    */
   serverRender: (comp, props) =>
-    renderToString(() => (comp as (p: unknown) => unknown)(props) as any),
+    renderToString((comp as (p: unknown) => unknown)(props)),
 
   /**
-   * Client-side: appended verbatim to each island bundle by the bundler.
-   * `__COMP__` is replaced with the actual component reference at build time.
-   * Must export `__islandMount(el, props)`.
+   * Client-side: empty snippet — let anpan's built-in island reconciler
+   * handle mounting. The reconciler calls component(props) and diffs the
+   * returned VNode tree against the DOM, re-rendering on state changes.
    */
-  clientMountSnippet:
-    `import{render as __sr__}from"solid-js/web";` +
-    `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+  clientMountSnippet: "",
 };
 
 const server = await createServer({
-  pagesDir: "./examples/solidjs/pages",
-  port: 3004,
+  pagesDir: "./pages",
+  port: parseInt(process.env.PORT ?? "3004"),
   jsxFramework: solidAdapter,
 });
 

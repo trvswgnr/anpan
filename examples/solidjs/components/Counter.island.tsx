@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { useState } from "anpan/islands";
 import { island } from "../../../src/islands/index.ts";
 
 interface CounterProps {
@@ -6,25 +6,22 @@ interface CounterProps {
 }
 
 /**
- * A SolidJS island component using SolidJS's `createSignal` for fine-grained
- * reactivity.
+ * An island component demonstrating anpan's built-in useState alongside
+ * solid-js. Pages in this example use anpan's JSX runtime; islands use
+ * anpan's useState for client-side reactivity and the built-in reconciler
+ * for hydration (no framework-specific mount needed).
  *
- * On the server: rendered to HTML via SolidJS's `renderToString` (provided by
- * the explicit adapter in main.ts).
- * On the client: mounted with SolidJS's `render`, which sets up reactive DOM
- * updates without a virtual DOM diff cycle.
- *
- * NOTE: Requires the SolidJS JSX transform (e.g. bun-plugin-solid) for correct
- * compilation. Without it, JSX compiles to React.createElement which SolidJS
- * cannot hydrate as reactive primitives.
+ * solid-js is available as a peer dependency and can be used for its
+ * non-JSX reactive primitives (createStore, createContext, etc.) in
+ * server-side code or with a dedicated JSX transform.
  */
 function Counter({ initial = 0 }: CounterProps) {
-  const [count, setCount] = createSignal(initial);
+  const [count, setCount] = useState(initial);
   return (
-    <div style={{ display: "inline-flex", "align-items": "center", gap: "1rem", padding: "1rem", border: "1px solid #ccc", "border-radius": "8px" }}>
-      <button onClick={() => setCount(count() - 1)} style={{ "font-size": "1.5rem", padding: "0.25rem 0.75rem" }}>−</button>
-      <span style={{ "font-size": "1.5rem", "min-width": "2rem", "text-align": "center" }}>{count()}</span>
-      <button onClick={() => setCount(count() + 1)} style={{ "font-size": "1.5rem", padding: "0.25rem 0.75rem" }}>+</button>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: "1rem", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px" }}>
+      <button onClick={() => setCount(count - 1)} style={{ fontSize: "1.5rem", padding: "0.25rem 0.75rem" }}>−</button>
+      <span style={{ fontSize: "1.5rem", minWidth: "2rem", textAlign: "center" }}>{count}</span>
+      <button onClick={() => setCount(count + 1)} style={{ fontSize: "1.5rem", padding: "0.25rem 0.75rem" }}>+</button>
     </div>
   );
 }

@@ -43,6 +43,8 @@ export interface IslandPluginOptions {
 }
 
 const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
+const JSX_RUNTIME = join(import.meta.dir, "../jsx/jsx-runtime.ts");
+const JSX_DEV_RUNTIME = join(import.meta.dir, "../jsx/jsx-dev-runtime.ts");
 const ISLANDS_IMPORT_RE = /from\s+["']anpan\/islands["']/g;
 
 export function createIslandPlugin(
@@ -53,6 +55,36 @@ export function createIslandPlugin(
   return {
     name: "anpan:auto-island",
     setup(build) {
+      if (mode === "browser") {
+        // Resolve anpan JSX runtimes to their actual file paths so Bun.build()
+        // can find them even when `anpan` is not installed in node_modules
+        // (e.g. when examples use tsconfig paths instead of a real dep).
+        build.onResolve({ filter: /^anpan\/jsx-runtime$/ }, () => ({
+          path: JSX_RUNTIME,
+        }));
+        build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({
+          path: JSX_DEV_RUNTIME,
+        }));
+
+        // Redirect any direct import of the server-side islands module
+        // (e.g. "../../../src/islands/index.ts") to the browser-safe
+        // client-runtime.ts. This prevents node:crypto and node:async_hooks
+        // from being bundled into the browser output.
+        const SERVER_ISLANDS = join(import.meta.dir, "index.ts");
+        build.onResolve({ filter: /islands\/index\.ts$/ }, (args) => {
+          // Only redirect if the resolved absolute path is our server module
+          const resolved = join(args.resolveDir, args.path);
+          if (resolved === SERVER_ISLANDS) {
+            return { path: CLIENT_RUNTIME };
+          }
+        });
+        // Also catch the package import form "anpan/islands" that the string
+        // replacement might miss in edge cases.
+        build.onResolve({ filter: /^anpan\/islands$/ }, () => ({
+          path: CLIENT_RUNTIME,
+        }));
+      }
+
       build.onLoad({ filter: /\.island\.(tsx?|jsx?)$/ }, async (args) => {
         const source = await Bun.file(args.path).text();
         const loader = detectLoader(args.path);
@@ -63,15 +95,25 @@ export function createIslandPlugin(
           // Also strip any island() wrapper exports since the component is
           // used directly by the hydration runtime.
           let transformed = source.replace(ISLANDS_IMPORT_RE, `from "${CLIENT_RUNTIME}"`);
-          // Remove manually-written island() default exports (backward compat)
-          transformed = transformed.replace(
-            /\nexport\s+default\s+island\s*\([^)]+\)\s*;?\s*$/m,
-            "",
+          // Replace manually-written island() default exports with a plain
+          // `export default ComponentName` so the hydration runtime can import
+          // the component directly without the server-only island() wrapper.
+          const islandCallMatch = transformed.match(
+            /\nexport\s+default\s+island\s*\(\s*(\w+)\s*,[^)]+\)\s*;?\s*$/m,
           );
+          if (islandCallMatch) {
+            const compName = islandCallMatch[1]!;
+            transformed = transformed.replace(
+              /\nexport\s+default\s+island\s*\([^)]+\)\s*;?\s*$/m,
+              `\nexport default ${compName};`,
+            );
+          }
 
-          // If an adapter is configured, append the __islandMount export so
-          // the client runtime can use the framework's own render/hydrate API.
-          if (adapter !== null) {
+          // If an adapter provides a clientMountSnippet, append the
+          // __islandMount export so the hydration runtime uses the framework's
+          // own render/hydrate API. An empty snippet means "use the built-in
+          // anpan reconciler" (no __islandMount exported).
+          if (adapter !== null && adapter.clientMountSnippet !== "") {
             const { name, transformed: namedTransformed } = extractAndNormalizeDefaultExport(transformed);
             if (name !== null) {
               const snippet = adapter.clientMountSnippet.replaceAll("__COMP__", name);
@@ -84,6 +126,16 @@ export function createIslandPlugin(
 
         // Server mode: auto-wrap if not already wrapped.
         if (/\bisland\s*\(/.test(source)) {
+          // Already wrapped. For built-in React/Preact adapters we still need
+          // to inject the server-side renderToString so SSR snapshots are
+          // populated (not empty). Try to inject into the existing island() call.
+          const builtin = adapter !== null ? getBuiltinFramework(adapter) : null;
+          if (builtin !== null) {
+            const withRender = injectRenderIntoPreWrapped(source, builtin);
+            if (withRender !== null) {
+              return { contents: withRender, loader };
+            }
+          }
           return { contents: source, loader };
         }
 
@@ -264,4 +316,51 @@ function injectServerRender(
     /^(import\{island as __i__\}from"anpan\/islands";\n)/,
     `$1${imports}`,
   );
+}
+
+/**
+ * For pre-wrapped islands that already call `island(Comp, import.meta.path)`,
+ * inject a server-side render option so the SSR snapshot is populated.
+ *
+ * Input example:
+ *   export default island(Counter, import.meta.path);
+ *
+ * Output (React):
+ *   import{createElement as __ce__}from"react";
+ *   import{renderToString as __rts__}from"react-dom/server";
+ *   export default island(Counter, import.meta.path, {render:(p)=>__rts__(__ce__(Counter,p))});
+ *
+ * Returns `null` when the pattern is not found (caller should leave source unchanged).
+ */
+function injectRenderIntoPreWrapped(
+  source: string,
+  framework: "react" | "preact",
+): string | null {
+  // Match the last export default island(Comp, ...) with optional trailing semi
+  const callRe = /\nexport\s+default\s+island\s*\(\s*(\w+)\s*,\s*[^)]+\)\s*;?\s*$/m;
+  const match = source.match(callRe);
+  if (!match) return null;
+
+  const name = match[1]!;
+
+  let imports: string;
+  let renderExpr: string;
+
+  if (framework === "react") {
+    imports =
+      `import{createElement as __ce__}from"react";\n` +
+      `import{renderToString as __rts__}from"react-dom/server";\n`;
+    renderExpr = `__rts__(__ce__(${name},p))`;
+  } else {
+    imports =
+      `import{h as __ph__}from"preact";\n` +
+      `import{renderToString as __rts__}from"preact-render-to-string";\n`;
+    renderExpr = `__rts__(__ph__(${name},p))`;
+  }
+
+  // Rewrite the island() call to include a render option
+  const newCall = `\nexport default island(${name}, import.meta.path, {render:(p)=>${renderExpr}});`;
+  const rewritten = source.replace(callRe, newCall);
+
+  return imports + rewritten;
 }
