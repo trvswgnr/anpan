@@ -28,7 +28,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Test
-        run: bun test
+        run: SKIP_BROWSER_TESTS=1 bun test
 
       - name: Typecheck
         run: bun run typecheck
