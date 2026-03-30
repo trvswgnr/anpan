@@ -10,6 +10,7 @@ import {
 } from "../renderer/index.ts";
 import { serveStatic } from "./static.ts";
 import { runMiddleware, type Middleware } from "../middleware/index.ts";
+import { createDevReloadSseMiddleware } from "../dev/reload-sse.ts";
 import {
   bundleIslands,
   serveIsland,
@@ -112,7 +113,10 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   const publicDir = resolve(config.publicDir ?? "./public");
   const islandOutDir = resolve(ISLANDS_OUT_DIR);
   const isDev = config.dev ?? process.env.NODE_ENV !== "production";
-  const middleware = config.middleware ?? [];
+  const devReload = isDev ? createDevReloadSseMiddleware() : null;
+  const middleware: Middleware[] = devReload
+    ? [devReload.middleware, ...(config.middleware ?? [])]
+    : [...(config.middleware ?? [])];
 
   // Island scan root: explicit srcDir, or parent of pagesDir so that
   // sibling directories like components/ are included automatically.
@@ -216,6 +220,10 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
     ({ manifest: islandManifest, runtimeUrl: islandRuntimeUrl } =
       await bundleIslands(srcDir, islandOutDir, adapter));
   };
+
+  if (devReload) {
+    (server as unknown as Record<string, unknown>).__broadcastDevReload = devReload.broadcastReload;
+  }
 
   return server;
 }

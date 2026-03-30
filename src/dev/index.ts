@@ -1,11 +1,9 @@
 import { createServer, type ServerConfig } from "../server/index.ts";
-import type { Middleware } from "../middleware/index.ts";
 
 // ---------------------------------------------------------------------------
 // Dev server — wraps createServer() and adds:
-//   • File watching via Bun's native FS watcher
-//   • SSE hot-reload endpoint (/__dev/reload)
-//   • Injects a tiny hot-reload script into every page (done in renderer)
+//   • File watching via Bun's native FS watcher (browser reload on source change)
+//   • createServer already registers /__dev/reload SSE and injects the reload script in dev
 // ---------------------------------------------------------------------------
 
 /**
@@ -18,58 +16,20 @@ import type { Middleware } from "../middleware/index.ts";
 export async function createDevServer(
   config: ServerConfig = {},
 ): Promise<ReturnType<typeof Bun.serve>> {
-  const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
-  const encoder = new TextEncoder();
-
-  // SSE middleware — intercepts /__dev/reload before any other routing
-  const sseMiddleware: Middleware = async (req, next) => {
-    if (new URL(req.url).pathname !== "/__dev/reload") return next(req);
-
-    let ctrl!: ReadableStreamDefaultController<Uint8Array>;
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        ctrl = controller;
-        clients.add(controller);
-        // Initial comment keeps some proxies from buffering
-        controller.enqueue(encoder.encode(": connected\n\n"));
-      },
-      cancel() {
-        clients.delete(ctrl);
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
-  };
-
   const server = await createServer({
     ...config,
     dev: true,
-    middleware: [sseMiddleware, ...(config.middleware ?? [])],
+    middleware: config.middleware ?? [],
   });
 
   const pagesDir = config.pagesDir ?? "./src/pages";
+  const broadcast = (server as unknown as { __broadcastDevReload?: () => void }).__broadcastDevReload;
 
   // Watch the pages directory for changes
   setupWatcher(pagesDir, async () => {
-    // Reload routes + island bundles
     const reload = (server as unknown as { __reloadRoutes?: () => Promise<void> }).__reloadRoutes;
     if (reload) await reload();
-
-    // Signal all SSE clients
-    const msg = encoder.encode("data: reload\n\n");
-    for (const ctrl of clients) {
-      try {
-        ctrl.enqueue(msg);
-      } catch {
-        clients.delete(ctrl);
-      }
-    }
+    broadcast?.();
   });
 
   console.log(`[dev] Watching ${pagesDir} for changes`);

@@ -3,13 +3,16 @@ node_modules/
 # use bun install (circular local file-path dependency prevention).
 # Pattern: un-ignore the node_modules dir, re-ignore everything inside it,
 # then un-ignore only the anpan/ stub and its contents.
-!examples/blog/node_modules/
-examples/blog/node_modules/*
-!examples/blog/node_modules/anpan/
-!examples/blog/node_modules/anpan/**
+examples/blog/node_modules/**/*
+!examples/blog/node_modules/anpan/**/*
+examples/dev/node_modules/**/*
+!examples/dev/node_modules/anpan/**
+examples/react/node_modules/**/*
+!examples/react/node_modules/anpan/**
+examples/preact/node_modules/**/*
+!examples/preact/node_modules/anpan/**
 !examples/solidjs/node_modules/
-examples/solidjs/node_modules/*
-!examples/solidjs/node_modules/anpan/
+examples/solidjs/node_modules/**/*
 !examples/solidjs/node_modules/anpan/**
 .anpan/
 dist/
