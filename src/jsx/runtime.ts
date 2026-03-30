@@ -62,6 +62,16 @@ function serializeAttr(name: string, value: unknown): string {
   if (value === false || value === null || value === undefined) return "";
   if (BOOLEAN_ATTRS.has(attrName)) return value ? ` ${attrName}` : "";
   if (value === true) return ` ${attrName}`;
+
+  // Style objects: convert { camelCase: value } → "kebab-case:value;"
+  if (attrName === "style" && typeof value === "object") {
+    const css = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== null && v !== undefined && v !== false && v !== "")
+      .map(([k, v]) => `${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${v}`)
+      .join(";");
+    return css ? ` style="${escapeHtml(css)}"` : "";
+  }
+
   return ` ${attrName}="${escapeHtml(String(value))}"`;
 }
 

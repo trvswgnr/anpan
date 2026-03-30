@@ -83,9 +83,11 @@ export function createIslandPlugin(
             "",
           );
 
-          // If an adapter is configured, append the __islandMount export so
-          // the client runtime can use the framework's own render/hydrate API.
-          if (adapter !== null) {
+          // If an adapter provides a clientMountSnippet, append the
+          // __islandMount export so the hydration runtime uses the framework's
+          // own render/hydrate API. An empty snippet means "use the built-in
+          // anpan reconciler" (no __islandMount exported).
+          if (adapter !== null && adapter.clientMountSnippet !== "") {
             const { name, transformed: namedTransformed } = extractAndNormalizeDefaultExport(transformed);
             if (name !== null) {
               const snippet = adapter.clientMountSnippet.replaceAll("__COMP__", name);
@@ -98,6 +100,16 @@ export function createIslandPlugin(
 
         // Server mode: auto-wrap if not already wrapped.
         if (/\bisland\s*\(/.test(source)) {
+          // Already wrapped. For built-in React/Preact adapters we still need
+          // to inject the server-side renderToString so SSR snapshots are
+          // populated (not empty). Try to inject into the existing island() call.
+          const builtin = adapter !== null ? getBuiltinFramework(adapter) : null;
+          if (builtin !== null) {
+            const withRender = injectRenderIntoPreWrapped(source, builtin);
+            if (withRender !== null) {
+              return { contents: withRender, loader };
+            }
+          }
           return { contents: source, loader };
         }
 
@@ -278,4 +290,51 @@ function injectServerRender(
     /^(import\{island as __i__\}from"anpan\/islands";\n)/,
     `$1${imports}`,
   );
+}
+
+/**
+ * For pre-wrapped islands that already call `island(Comp, import.meta.path)`,
+ * inject a server-side render option so the SSR snapshot is populated.
+ *
+ * Input example:
+ *   export default island(Counter, import.meta.path);
+ *
+ * Output (React):
+ *   import{createElement as __ce__}from"react";
+ *   import{renderToString as __rts__}from"react-dom/server";
+ *   export default island(Counter, import.meta.path, {render:(p)=>__rts__(__ce__(Counter,p))});
+ *
+ * Returns `null` when the pattern is not found (caller should leave source unchanged).
+ */
+function injectRenderIntoPreWrapped(
+  source: string,
+  framework: "react" | "preact",
+): string | null {
+  // Match the last export default island(Comp, ...) with optional trailing semi
+  const callRe = /\nexport\s+default\s+island\s*\(\s*(\w+)\s*,\s*[^)]+\)\s*;?\s*$/m;
+  const match = source.match(callRe);
+  if (!match) return null;
+
+  const name = match[1]!;
+
+  let imports: string;
+  let renderExpr: string;
+
+  if (framework === "react") {
+    imports =
+      `import{createElement as __ce__}from"react";\n` +
+      `import{renderToString as __rts__}from"react-dom/server";\n`;
+    renderExpr = `__rts__(__ce__(${name},p))`;
+  } else {
+    imports =
+      `import{h as __ph__}from"preact";\n` +
+      `import{renderToString as __rts__}from"preact-render-to-string";\n`;
+    renderExpr = `__rts__(__ph__(${name},p))`;
+  }
+
+  // Rewrite the island() call to include a render option
+  const newCall = `\nexport default island(${name}, import.meta.path, {render:(p)=>${renderExpr}});`;
+  const rewritten = source.replace(callRe, newCall);
+
+  return imports + rewritten;
 }

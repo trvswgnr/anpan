@@ -172,6 +172,16 @@ describe("blog example", () => {
     const html = await fetch(`${server.base}/`).then((r) => r.text());
     expect(html).toContain("island-placeholder");
   });
+
+  test("island data-bundle URLs are accessible", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const bundleUrls = [...html.matchAll(/data-bundle="([^"]+)"/g)].map((m) => m[1]!);
+    expect(bundleUrls.length).toBeGreaterThan(0);
+    for (const url of bundleUrls) {
+      const res = await fetch(`${server.base}${url}`);
+      expect(res.status).toBe(200);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -206,6 +216,25 @@ describe("react example", () => {
   test("GET / renders island placeholder for Counter", async () => {
     const html = await fetch(`${server.base}/`).then((r) => r.text());
     expect(html).toContain("island-placeholder");
+  });
+
+  test("Counter island has SSR snapshot with HTML content", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const m = html.match(/(<island-placeholder[^>]*>)([\s\S]*?)<\/island-placeholder>/);
+    expect(m).not.toBeNull();
+    // Snapshot should contain actual HTML, not empty or "undefined"
+    expect(m![2]).toContain("<");
+    expect(m![2]).not.toBe("undefined");
+  });
+
+  test("island data-bundle JS is accessible", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const bundleUrls = [...html.matchAll(/data-bundle="([^"]+)"/g)].map((m) => m[1]!);
+    expect(bundleUrls.length).toBeGreaterThan(0);
+    for (const url of bundleUrls) {
+      const res = await fetch(`${server.base}${url}`);
+      expect(res.status).toBe(200);
+    }
   });
 
   test("GET /nonexistent returns 404", async () => {
@@ -248,6 +277,24 @@ describe("preact example", () => {
     expect(html).toContain("island-placeholder");
   });
 
+  test("Counter island has SSR snapshot with HTML content", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const m = html.match(/(<island-placeholder[^>]*>)([\s\S]*?)<\/island-placeholder>/);
+    expect(m).not.toBeNull();
+    expect(m![2]).toContain("<");
+    expect(m![2]).not.toBe("undefined");
+  });
+
+  test("island data-bundle JS is accessible", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const bundleUrls = [...html.matchAll(/data-bundle="([^"]+)"/g)].map((m) => m[1]!);
+    expect(bundleUrls.length).toBeGreaterThan(0);
+    for (const url of bundleUrls) {
+      const res = await fetch(`${server.base}${url}`);
+      expect(res.status).toBe(200);
+    }
+  });
+
   test("GET /nonexistent returns 404", async () => {
     const res = await fetch(`${server.base}/nonexistent`);
     expect(res.status).toBe(404);
@@ -286,6 +333,24 @@ describe("solidjs example", () => {
   test("GET / renders island placeholder for Counter", async () => {
     const html = await fetch(`${server.base}/`).then((r) => r.text());
     expect(html).toContain("island-placeholder");
+  });
+
+  test("Counter island has SSR snapshot with HTML content", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const m = html.match(/(<island-placeholder[^>]*>)([\s\S]*?)<\/island-placeholder>/);
+    expect(m).not.toBeNull();
+    expect(m![2]).toContain("<");
+    expect(m![2]).not.toBe("undefined");
+  });
+
+  test("island data-bundle JS is accessible", async () => {
+    const html = await fetch(`${server.base}/`).then((r) => r.text());
+    const bundleUrls = [...html.matchAll(/data-bundle="([^"]+)"/g)].map((m) => m[1]!);
+    expect(bundleUrls.length).toBeGreaterThan(0);
+    for (const url of bundleUrls) {
+      const res = await fetch(`${server.base}${url}`);
+      expect(res.status).toBe(200);
+    }
   });
 
   test("GET /nonexistent returns 404", async () => {

@@ -112,6 +112,10 @@ function renderToDom(node: unknown, parent: Element | DocumentFragment): void {
     }
     if (key === "className") { el.className = String(val); continue; }
     if (key === "htmlFor") { (el as HTMLLabelElement).htmlFor = String(val); continue; }
+    if (key === "style" && val !== null && typeof val === "object") {
+      Object.assign(el.style, val as Record<string, string>);
+      continue;
+    }
     if (val === true) { el.setAttribute(key.toLowerCase(), ""); continue; }
     if (val === false || val === null || val === undefined) { el.removeAttribute(key.toLowerCase()); continue; }
     el.setAttribute(key.toLowerCase(), String(val));
