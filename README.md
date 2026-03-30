@@ -84,6 +84,10 @@ Run it:
 bun run src/main.ts
 ```
 
+## Examples
+
+If you cloned this repository, the [`examples/`](examples/) directory contains runnable sample apps wired to the **local** framework source (no `bun link` required). From the repo root, run `bun install` once for tests and tooling, then `bun dev` to start the main dev example with hot reload. See [examples/README.md](examples/README.md) for every example, default ports, when to run `bun install` inside a folder, and how paths relate to the working directory.
+
 ## Pages
 
 Every `.tsx` or `.ts` file inside `pagesDir` becomes a route.
