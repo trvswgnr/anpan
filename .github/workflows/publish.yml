@@ -1,0 +1,61 @@
+# Publishes @travvy/anpan from the version in package.json on each push to main.
+# If that exact version is already on npm, the publish step is skipped (job still passes).
+#
+# Trusted publishing (OIDC): on npmjs.com → package @travvy/anpan → Settings →
+# Trusted publishing → GitHub Actions. Repository: trvswgnr / anpan. Workflow
+# filename must match this file: publish.yml. No NODE_AUTH_TOKEN secret needed
+# for publish when that is configured (GitHub-hosted runners only).
+
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Ensure npm CLI supports trusted publishing
+        run: npm install -g npm@^11.5.1
+
+      # Avoid failing the job when main was updated but package.json version was not
+      # (docs-only merges, etc.). Publish only when this version is not yet on npm.
+      - name: Check if version is already published
+        id: npm_version
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping publish: ${NAME}@${VERSION} is already on the registry."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Will publish ${NAME}@${VERSION} (not yet on the registry)."
+          fi
+
+      - name: Publish to npm
+        if: steps.npm_version.outputs.publish == 'true'
+        run: npm publish

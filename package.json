@@ -2,6 +2,10 @@
   "name": "@travvy/anpan",
   "version": "0.1.1",
   "description": "A lightweight Bun-native SSR framework with TSX templating and islands architecture",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trvswgnr/anpan.git"
+  },
   "type": "module",
   "main": "./src/index.ts",
   "files": ["src"],
