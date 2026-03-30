@@ -13,6 +13,9 @@
     "./jsx-runtime": "./src/jsx/jsx-runtime.ts",
     "./jsx-dev-runtime": "./src/jsx/jsx-dev-runtime.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "bun run --hot examples/dev/main.ts",
     "build": "bun run src/build/index.ts",
