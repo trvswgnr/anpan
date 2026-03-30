@@ -1,4 +1,8 @@
 import type { Child, ComponentType, Props, VNode } from "./types.ts";
+import {
+  CONTENT_MARKER_HTML,
+  CONTENT_MARKER_VNODE_TYPE,
+} from "../renderer/content-marker.ts";
 
 export const FRAGMENT = Symbol("Fragment");
 
@@ -126,10 +130,9 @@ export function renderToString(node: unknown): string {
     return renderToString(result);
   }
 
-  // Special content marker - emits the sentinel string used by the renderer
-  // to split the layout shell into before/after the page content.
-  if (vnode.type === "__bwfw_content_marker__") {
-    return "<!--_BWFW_CONTENT_-->";
+  // Layout `{children}` sentinel (see renderer content-marker).
+  if (vnode.type === CONTENT_MARKER_VNODE_TYPE) {
+    return CONTENT_MARKER_HTML;
   }
 
   if (typeof vnode.type !== "string") return "";

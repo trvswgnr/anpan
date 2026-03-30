@@ -7,9 +7,15 @@ import { findLayouts } from "../router/index.ts";
 import type { Route, RouteContext, RouteMatch, Loader, LoaderReturn } from "../router/types.ts";
 import { ISLANDS_SERVE_PATH } from "../islands/bundler.ts";
 import { DEV_RELOAD_CLIENT_SCRIPT } from "../dev/reload-client-script.ts";
+import {
+  CONTENT_MARKER_HTML,
+  CONTENT_MARKER_VNODE_TYPE,
+} from "./content-marker.ts";
 
 // Types
 
+// `any` is required below so `PageProps<typeof loader>` can infer loader `data`;
+// stricter props types break conditional inference for user loaders.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface PageModule {
   default: (props: any) => VNode | Child | null;
@@ -65,18 +71,14 @@ export interface RenderContext {
   islandRuntimeUrl: string;
   islandOutDir: string;
   isDev: boolean;
+  /** Defaults to `console.error` when building contexts without a server. */
+  logError?: (message?: string, ...optionalParams: unknown[]) => void;
 }
 
-// Content marker - emitted by renderToString where {children} appears in
-// the layout, so we can split the layout shell into before/after.
+/** @deprecated Use {@link CONTENT_MARKER_VNODE_TYPE} from `./content-marker.ts`. */
+export const CONTENT_MARKER_TYPE = CONTENT_MARKER_VNODE_TYPE;
 
-/** Unique sentinel emitted into the layout HTML where the page content goes. */
-const CONTENT_MARKER = "<!--_BWFW_CONTENT_-->";
-
-/** Special VNode type that emits CONTENT_MARKER during renderToString. */
-export const CONTENT_MARKER_TYPE = "__bwfw_content_marker__";
-
-// renderPage - true streaming: head sent immediately, body follows
+// renderPage — streaming: head sent early, body follows in chunks.
 
 export async function renderPage(ctx: RenderContext): Promise<Response> {
   const { match, req, allRoutes, islandManifest, islandRuntimeUrl, isDev } = ctx;
@@ -98,10 +100,7 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     throw new Error(`Page module must export a default function: ${match.route.filePath}`);
   }
 
-  // ---------------------------------------------------------------------------
-  // Run the optional loader. If it returns a Response, short-circuit rendering.
-  // Otherwise pass the data to the page component.
-  // ---------------------------------------------------------------------------
+  // Run the optional loader; Response return values short-circuit rendering.
   let loaderData: unknown = undefined;
   let responseStatus = 200;
   let responseHeaders: Record<string, string> = {};
@@ -137,12 +136,7 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     if (typeof mod.default === "function") layoutMods.push(mod);
   }
 
-  // ---------------------------------------------------------------------------
-  // Phase 1 - render the page component.
-  //   * Calls <Head> which registers head content into headCtx.
-  //   * Calls island() wrappers which register into islandReg.
-  //   * Result: pageHtml string + all metadata known.
-  // ---------------------------------------------------------------------------
+  // Phase 1: page component (<Head>, islands) -> pageHtml string.
   const pageCtx = { ...routeCtx, data: loaderData };
 
   let pageHtml = "";
@@ -152,17 +146,9 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // Phase 2 - render the layout shell with a content marker where {children}
-  // goes. This gives us the full outer HTML structure immediately, without
-  // needing the page HTML to be ready first.
-  //   * layouts[0] = innermost, layouts[last] = outermost root layout.
-  //   * We wrap innermost -> outermost so root layout is the outermost element.
-  //
-  // Must run inside runWithIslandRegistry so islands used in layouts (e.g. a
-  // ThemeToggle in the nav) register and get hydration scripts injected.
-  // ---------------------------------------------------------------------------
-  const markerVNode: VNode = { type: CONTENT_MARKER_TYPE, props: {} };
+  // Phase 2: layout shell with content marker for {children}; innermost layout first.
+  // Islands in layouts need runWithIslandRegistry for hydration scripts.
+  const markerVNode: VNode = { type: CONTENT_MARKER_VNODE_TYPE, props: {} };
   let shellContent: VNode | Child | null = markerVNode;
 
   for (const layoutMod of layoutMods) {
@@ -185,23 +171,16 @@ export async function renderPage(ctx: RenderContext): Promise<Response> {
   );
 
   // Split the layout shell at the content marker
-  const markerPos = layoutHtml.indexOf(CONTENT_MARKER);
+  const markerPos = layoutHtml.indexOf(CONTENT_MARKER_HTML);
   const shellBefore = markerPos >= 0 ? layoutHtml.slice(0, markerPos) : layoutHtml;
-  const shellAfter = markerPos >= 0 ? layoutHtml.slice(markerPos + CONTENT_MARKER.length) : "";
+  const shellAfter =
+    markerPos >= 0 ? layoutHtml.slice(markerPos + CONTENT_MARKER_HTML.length) : "";
 
   // Inject <head> additions (title, meta, island scripts, dev reload) just
   // before </head> in the layout's head section.
   const shellBeforeWithHead = spliceBeforeCloseHead(shellBefore, headInjection);
 
-  // ---------------------------------------------------------------------------
-  // Stream - 3 chunks:
-  //   1. DOCTYPE + layout shell head/opening body (sent immediately)
-  //   2. Page HTML (available right away since Phase 1 is synchronous)
-  //   3. Layout shell closing tags (footer, </body>, </html>)
-  //
-  // When Phase 1 becomes async (data fetching, Suspense), chunk 1 will land
-  // in the browser before chunk 2 is ready - that's the streaming payoff.
-  // ---------------------------------------------------------------------------
+  // Stream: DOCTYPE + shell head, then page HTML, then closing tags.
   return new Response(
     buildStream(`<!DOCTYPE html>\n${shellBeforeWithHead}`, pageHtml, shellAfter),
     {
@@ -279,13 +258,14 @@ export async function renderErrorPage(
   error: Error,
 ): Promise<Response> {
   const { allRoutes, isDev } = ctx;
+  const logError = ctx.logError ?? console.error.bind(console);
   const errorRoute = allRoutes.find((r) => r.type === "error");
 
   if (errorRoute) {
     try {
       return await renderPage({ ...ctx, match: { route: errorRoute, params: {} } });
     } catch (err) {
-      console.error("[renderer] Custom _error page failed:", err);
+      logError("[renderer] Custom _error page failed:", err);
     }
   }
 
@@ -303,6 +283,7 @@ export async function renderErrorPage(
 
 export async function renderNotFound(ctx: RenderContext): Promise<Response> {
   const { allRoutes } = ctx;
+  const logError = ctx.logError ?? console.error.bind(console);
   const notFoundRoute = allRoutes.find((r) => r.type === "notfound");
 
   if (notFoundRoute) {
@@ -310,7 +291,7 @@ export async function renderNotFound(ctx: RenderContext): Promise<Response> {
       const res = await renderPage({ ...ctx, match: { route: notFoundRoute, params: {} } });
       return new Response(res.body, { status: 404, headers: res.headers });
     } catch (err) {
-      console.error("[renderer] Custom _404 page failed:", err);
+      logError("[renderer] Custom _404 page failed:", err);
     }
   }
 

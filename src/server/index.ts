@@ -1,13 +1,9 @@
 import { join, resolve as resolvePath } from "node:path";
+import type { BundleIslandsOptions } from "../islands/bundler.ts";
 import { scanRoutes, matchRoute } from "../router/index.ts";
 import type { Route } from "../router/types.ts";
 import { createIslandPlugin } from "../islands/plugin.ts";
-import {
-  renderPage,
-  renderErrorPage,
-  renderNotFound,
-  type PageModule,
-} from "../renderer/index.ts";
+import { renderPage, renderErrorPage, renderNotFound } from "../renderer/index.ts";
 import { serveStatic } from "./static.ts";
 import { runMiddleware, type Middleware } from "../middleware/index.ts";
 import { createDevReloadSseMiddleware } from "../dev/reload-sse.ts";
@@ -23,6 +19,9 @@ import type { IslandManifest } from "../islands/types.ts";
 import { setServerAdapter } from "../islands/index.ts";
 
 // Config
+
+/** Optional sink for framework log lines; defaults to `console`. */
+export type ServerLogger = Pick<Console, "log" | "warn" | "error">;
 
 export interface ServerConfig {
   /** Directory containing page files. Default: "./src/pages" */
@@ -40,6 +39,8 @@ export interface ServerConfig {
   middleware?: Middleware[];
   /** Enable development mode (verbose errors, hot reload). */
   dev?: boolean;
+  /** Overrides `console` for `[server]` / `[islands bundler]` / renderer error logs. */
+  logger?: ServerLogger;
   /**
    * Custom JSX framework adapter for islands (React, Preact, Solid, etc.).
    *
@@ -62,8 +63,6 @@ export interface ServerConfig {
   jsxFramework?: JsxFrameworkAdapter;
 }
 
-// createServer
-
 /**
  * Create and start the HTTP server.
  *
@@ -79,6 +78,9 @@ export interface ServerConfig {
  * ```
  */
 export async function createServer(config: ServerConfig = {}): Promise<ReturnType<typeof Bun.serve>> {
+  const log = config.logger ?? console;
+  const bundleOpts: BundleIslandsOptions = { logError: log.error.bind(log) };
+
   // Resolve the JSX framework adapter (explicit config > tsconfig detection > null).
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
 
@@ -135,11 +137,10 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
 
   // Bundle islands - scan from srcDir, not just pagesDir
   let { manifest: islandManifest, runtimeUrl: islandRuntimeUrl }: IslandBundleResult =
-    await bundleIslands(srcDir, islandOutDir, adapter);
+    await bundleIslands(srcDir, islandOutDir, adapter, bundleOpts);
 
-  // ---------------------------------------------------------------------------
-  // Core fetch handler
-  // ---------------------------------------------------------------------------
+  const logError = log.error.bind(log);
+
   const handleRequest = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const { pathname } = url;
@@ -164,14 +165,24 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
         islandRuntimeUrl,
         islandOutDir,
         isDev,
+        logError,
       });
     }
 
-    const renderCtx = { match, req, allRoutes: routes, islandManifest, islandRuntimeUrl, islandOutDir, isDev };
+    const renderCtx = {
+      match,
+      req,
+      allRoutes: routes,
+      islandManifest,
+      islandRuntimeUrl,
+      islandOutDir,
+      isDev,
+      logError,
+    };
 
     // 4. API route
     if (match.route.type === "api") {
-      return handleApiRoute(req, match.route.filePath, match.params);
+      return handleApiRoute(req, match.route.filePath, match.params, isDev, logError);
     }
 
     // 5. Page route
@@ -184,7 +195,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
     try {
       res = await runMiddleware(middleware, req, handleRequest);
     } catch (err) {
-      console.error("[server] Unhandled error:", err);
+      logError("[server] Unhandled error:", err);
       res = await renderErrorPage(
         {
           match: { route: fallbackMatchRoute(), params: {} },
@@ -194,6 +205,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
           islandRuntimeUrl,
           islandOutDir,
           isDev,
+          logError,
         },
         err instanceof Error ? err : new Error(String(err)),
       );
@@ -206,7 +218,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
     hostname: config.hostname ?? "0.0.0.0",
     fetch,
     error(err) {
-      console.error("[server] Fatal:", err);
+      logError("[server] Fatal:", err);
       return new Response("Internal Server Error", { status: 500 });
     },
     development: isDev,
@@ -224,7 +236,7 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   (server as unknown as Record<string, unknown>).__reloadRoutes = async () => {
     routes = await scanRoutes(pagesDir);
     ({ manifest: islandManifest, runtimeUrl: islandRuntimeUrl } =
-      await bundleIslands(srcDir, islandOutDir, adapter));
+      await bundleIslands(srcDir, islandOutDir, adapter, bundleOpts));
   };
 
   if (devReload) {
@@ -247,24 +259,38 @@ async function handleApiRoute(
   req: Request,
   filePath: string,
   params: Record<string, string>,
+  isDev: boolean,
+  logError: (message?: string, ...optionalParams: unknown[]) => void,
 ): Promise<Response> {
-  const mod = await import(filePath) as Record<string, ApiHandler | undefined>;
-  const method = req.method.toUpperCase();
+  try {
+    const mod = await import(filePath) as Record<string, ApiHandler | undefined>;
+    const method = req.method.toUpperCase();
 
-  // Only look up known HTTP verbs to prevent prototype-chain access.
-  const handler = HTTP_METHODS.has(method)
-    ? (mod[method] ?? mod["default"])
-    : mod["default"];
+    // Only look up known HTTP verbs to prevent prototype-chain access.
+    const handler = HTTP_METHODS.has(method)
+      ? (mod[method] ?? mod["default"])
+      : mod["default"];
 
-  if (!handler) {
-    const allowed = Object.keys(mod).filter((k) => HTTP_METHODS.has(k)).join(", ");
-    return new Response(`Method ${method} not allowed`, {
-      status: 405,
-      headers: { Allow: allowed || "GET" },
+    if (!handler) {
+      const allowed = Object.keys(mod).filter((k) => HTTP_METHODS.has(k)).join(", ");
+      return new Response(`Method ${method} not allowed`, {
+        status: 405,
+        headers: { Allow: allowed || "GET" },
+      });
+    }
+
+    return await handler(req, { params });
+  } catch (err) {
+    logError("[server] API route error:", err);
+    const payload =
+      isDev && err instanceof Error
+        ? { error: "Internal Server Error", message: err.message }
+        : { error: "Internal Server Error" };
+    return new Response(JSON.stringify(payload), {
+      status: 500,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
     });
   }
-
-  return handler(req, { params });
 }
 
 // Utilities

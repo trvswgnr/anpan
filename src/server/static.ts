@@ -1,4 +1,5 @@
 import { join, resolve } from "node:path";
+import { isResolvedPathInsideRoot } from "./path-utils.ts";
 
 /**
  * Attempt to serve a static file from `publicDir`.
@@ -9,9 +10,8 @@ export async function serveStatic(
   pathname: string,
 ): Promise<Response | null> {
   const root = resolve(publicDir);
-  // resolve() normalises `.` and `..` - if the result escapes root, reject it.
   const filePath = resolve(join(root, pathname));
-  if (!filePath.startsWith(root + "/") && filePath !== root) return null;
+  if (!isResolvedPathInsideRoot(root, filePath)) return null;
 
   const file = Bun.file(filePath);
   if (!(await file.exists())) return null;

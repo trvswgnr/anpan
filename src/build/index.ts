@@ -1,6 +1,11 @@
 import { join } from "node:path";
-import { ANPAN_DIR, bundleIslands, resolveJsxFramework } from "../islands/bundler.ts";
+import {
+  ANPAN_DIR,
+  bundleIslands,
+  resolveJsxFramework,
+} from "../islands/bundler.ts";
 import type { JsxFrameworkAdapter } from "../islands/bundler.ts";
+import type { ServerLogger } from "../server/index.ts";
 
 export interface BuildConfig {
   /** Input pages directory */
@@ -17,9 +22,12 @@ export interface BuildConfig {
    * React and Preact are auto-detected from tsconfig - no adapter needed.
    */
   jsxFramework?: JsxFrameworkAdapter;
+  /** Defaults to `console`. */
+  logger?: ServerLogger;
 }
 
 export async function build(config: BuildConfig = {}): Promise<void> {
+  const log = config.logger ?? console;
   const pagesDir = resolve(config.pagesDir ?? "./src/pages");
   const islandRoot = config.srcDir ? resolve(config.srcDir) : join(pagesDir, "..");
   const outDir = resolve(config.outDir ?? ANPAN_DIR);
@@ -27,9 +35,11 @@ export async function build(config: BuildConfig = {}): Promise<void> {
 
   const adapter = await resolveJsxFramework(config.jsxFramework, process.cwd());
 
-  console.log("[build] Bundling islands...");
-  const { manifest } = await bundleIslands(islandRoot, islandOutDir, adapter);
-  console.log(`[build] Bundled ${manifest.size} island(s) -> ${islandOutDir}`);
+  log.log("[build] Bundling islands...");
+  const { manifest } = await bundleIslands(islandRoot, islandOutDir, adapter, {
+    logError: log.error.bind(log),
+  });
+  log.log(`[build] Bundled ${manifest.size} island(s) -> ${islandOutDir}`);
 
   // Write manifest JSON for reference
   const manifestPath = join(outDir, "island-manifest.json");
@@ -37,8 +47,8 @@ export async function build(config: BuildConfig = {}): Promise<void> {
     manifestPath,
     JSON.stringify(Object.fromEntries(manifest), null, 2),
   );
-  console.log(`[build] Manifest written to ${manifestPath}`);
-  console.log("[build] Done.");
+  log.log(`[build] Manifest written to ${manifestPath}`);
+  log.log("[build] Done.");
 }
 
 function resolve(path: string): string {

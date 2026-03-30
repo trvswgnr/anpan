@@ -1,4 +1,5 @@
 import { join, resolve } from "node:path";
+import { isResolvedPathInsideRoot } from "../server/path-utils.ts";
 import { stableId, scanIslandFiles } from "./index.ts";
 import type { IslandManifest, IslandMeta, JsxFrameworkAdapter } from "./types.ts";
 import { createIslandPlugin } from "./plugin.ts";
@@ -19,6 +20,11 @@ export interface IslandBundleResult {
   manifest: IslandManifest;
   /** Serve URL for the hydration runtime, e.g. /_islands/__runtime.js */
   runtimeUrl: string;
+}
+
+export interface BundleIslandsOptions {
+  /** Defaults to `console.error`. */
+  logError?: (message?: string, ...optionalParams: unknown[]) => void;
 }
 
 // Framework detection from tsconfig.json
@@ -68,7 +74,9 @@ export async function bundleIslands(
   rootDir: string,
   outDir = join(rootDir, ISLANDS_OUT_DIR),
   adapter: JsxFrameworkAdapter | null = null,
+  options?: BundleIslandsOptions,
 ): Promise<IslandBundleResult> {
+  const logError = options?.logError ?? console.error.bind(console);
   const files = await scanIslandFiles(rootDir);
   const runtimeEntry = join(import.meta.dir, "client-runtime.ts");
   const runtimeUrl = `${ISLANDS_SERVE_PATH}/${RUNTIME_BUNDLE}`;
@@ -111,7 +119,7 @@ export async function bundleIslands(
 
   if (!result.success) {
     for (const log of result.logs) {
-      console.error("[islands bundler]", log.message);
+      logError("[islands bundler]", log.message);
     }
     throw new Error("Island bundling failed");
   }
@@ -127,10 +135,14 @@ export async function bundleIslands(
     }
   }
 
-  if (runtimeOutputPath) {
-    const dest = join(outDir, RUNTIME_BUNDLE);
-    await Bun.write(dest, await Bun.file(runtimeOutputPath).text());
+  if (!runtimeOutputPath) {
+    throw new Error(
+      "Island bundling succeeded but no client-runtime entry output was found; cannot write __runtime.js",
+    );
   }
+
+  const dest = join(outDir, RUNTIME_BUNDLE);
+  await Bun.write(dest, await Bun.file(runtimeOutputPath).text());
 
   // Map each source island file to its output bundle.
   // We match using the path relative to rootDir (which Bun preserves in the
@@ -178,7 +190,7 @@ export async function serveIsland(
   const fileName = pathname.slice(ISLANDS_SERVE_PATH.length + 1);
   const root = resolve(outDir);
   const filePath = resolve(join(root, fileName));
-  if (!filePath.startsWith(root + "/")) return null;
+  if (!isResolvedPathInsideRoot(root, filePath) || filePath === root) return null;
   const file = Bun.file(filePath);
   if (!(await file.exists())) return null;
   return new Response(file, {
