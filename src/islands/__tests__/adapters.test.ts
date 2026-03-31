@@ -170,7 +170,9 @@ describe("custom adapter (SolidJS-style)", () => {
     },
     clientMountSnippet:
       `import{render as __sr__}from"solid-js/web";` +
-      `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+      `export const __islandMount=(el,props)=>{` +
+      `while(el.firstChild)el.removeChild(el.firstChild);` +
+      `__sr__(()=>__COMP__(props),el);el.dataset.mounted="1";};`,
   };
 
   test("satisfies JsxFrameworkAdapter interface", () => {

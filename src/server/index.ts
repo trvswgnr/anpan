@@ -48,7 +48,7 @@ export interface ServerConfig {
    * React and Preact are auto-detected from `jsxImportSource` in `tsconfig.json`
    * - no adapter needed for those. Supply this for any other framework.
    *
-   * @example Solid.js
+   * @example Solid.js (pages stay on anpan JSX; islands need `solidIslandTransform` + babel-preset-solid)
    * ```ts
    * import { renderToString } from "solid-js/web";
    * createServer({
@@ -56,7 +56,10 @@ export interface ServerConfig {
    *     serverRender: (comp, props) => renderToString(() => (comp as any)(props)),
    *     clientMountSnippet:
    *       `import{render as __sr__}from"solid-js/web";` +
-   *       `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+   *       `export const __islandMount=(el,props)=>{` +
+   *       `while(el.firstChild)el.removeChild(el.firstChild);` +
+   *       `__sr__(()=>__COMP__(props),el);el.dataset.mounted="1";};`,
+   *     solidIslandTransform: true,
    *   },
    * });
    * ```

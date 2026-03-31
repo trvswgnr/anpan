@@ -27,9 +27,24 @@ export interface JsxFrameworkAdapter {
    * @example Solid.js
    *   clientMountSnippet:
    *     `import{render as __sr__}from"solid-js/web";` +
-   *     `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`
+   *     `export const __islandMount=(el,props)=>{` +
+   *     `while(el.firstChild)el.removeChild(el.firstChild);` +
+   *     `__sr__(()=>__COMP__(props),el);el.dataset.mounted="1";};`
    */
   clientMountSnippet: string;
+
+  /**
+   * When `true`, `.island.tsx` / `.island.jsx` sources are preprocessed with
+   * `babel-preset-solid` **before** the island plugin (server: `generate: "ssr"`,
+   * browser bundles: `generate: "dom"`, `hydratable: true`). Use this when
+   * `serverRender` / `clientMountSnippet` target Solid (`solid-js/web`) while
+   * the app `tsconfig` still uses anpan JSX for pages (`jsxImportSource:
+   * "@travvy/anpan"`).
+   *
+   * Requires devDependencies in the app: `@babel/core`, `@babel/preset-typescript`,
+   * `babel-preset-solid`.
+   */
+  solidIslandTransform?: boolean;
 }
 
 export interface IslandMeta {

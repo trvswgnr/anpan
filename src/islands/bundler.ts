@@ -95,9 +95,16 @@ export async function bundleIslands(
 
   const manifest: IslandManifest = new Map();
 
+  // `clientMountSnippet` appends `export const __islandMount = ...` to each island
+  // module. With `splitting: true`, the bundler can tree-shake that export away
+  // (nothing in the chunk references it — only the runtime's dynamic import does),
+  // leaving only `default` and breaking React/Solid/Preact mounts. Disable
+  // splitting when a framework mount snippet is used so named exports are kept.
+  const frameworkMount =
+    adapter !== null && adapter.clientMountSnippet !== "";
+
   // Build all islands together with the runtime in one pass.
-  // Bun.build() with splitting: true puts shared code (useState, h, etc.)
-  // in shared chunks, ensuring all islands and the runtime share one instance.
+  // With splitting: true, shared code (useState, h, etc.) dedupes across chunks.
   // The "browser" condition in package.json ensures islands import the browser
   // stub (identity island(), reactive useState) rather than the server version.
   const result = await Bun.build({
@@ -107,7 +114,10 @@ export async function bundleIslands(
     ],
     outdir: outDir,
     target: "browser",
-    splitting: true,
+    splitting: !frameworkMount,
+    // `__islandMount` is only referenced from the runtime's dynamic import(); without this,
+    // the bundler can drop the named export as unused within the entry module graph.
+    ...(frameworkMount ? { treeShaking: false } : {}),
     plugins: [createIslandPlugin("browser", { adapter })],
     minify: process.env.NODE_ENV === "production",
     naming: {

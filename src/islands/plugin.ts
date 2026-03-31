@@ -1,4 +1,5 @@
 import type { BunPlugin } from "bun";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import type { JsxFrameworkAdapter } from "./types.ts";
 import { getBuiltinFramework } from "./builtin-adapters.ts";
@@ -41,6 +42,8 @@ export interface IslandPluginOptions {
 }
 
 const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
+/** Browser bundle import target for `@travvy/anpan/islands` (exports `island` + `useState`). */
+const BROWSER_ISLANDS = join(import.meta.dir, "browser-stub.ts");
 const JSX_RUNTIME = join(import.meta.dir, "../jsx/jsx-runtime.ts");
 const JSX_DEV_RUNTIME = join(import.meta.dir, "../jsx/jsx-dev-runtime.ts");
 
@@ -95,15 +98,31 @@ export function createIslandPlugin(
       }
 
       build.onLoad({ filter: /\.island\.(tsx?|jsx?)$/ }, async (args) => {
-        const source = await Bun.file(args.path).text();
-        const loader = detectLoader(args.path);
+        const raw = await Bun.file(args.path).text();
+        const useSolid =
+          adapter !== null &&
+          adapter.solidIslandTransform === true &&
+          /\.island\.(tsx|jsx)$/i.test(args.path);
+        let source = raw;
+        let loader: "tsx" | "ts" | "jsx" | "js" = detectLoader(args.path);
+        if (useSolid) {
+          try {
+            source = await transformIslandWithSolid(raw, args.path, mode);
+            loader = "js";
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            throw new Error(
+              `[anpan:islands] solidIslandTransform failed for ${args.path}: ${msg}`,
+            );
+          }
+        }
 
         if (mode === "browser") {
           // Rewrite framework island imports to client-runtime so useState is
           // the real reactive version and no server-only code is bundled.
           // Also strip any island() wrapper exports since the component is
           // used directly by the hydration runtime.
-          let transformed = source.replace(ISLANDS_IMPORT_RE, `from "${CLIENT_RUNTIME}"`);
+          let transformed = source.replace(ISLANDS_IMPORT_RE, `from "${BROWSER_ISLANDS}"`);
           // Replace manually-written island() default exports with a plain
           // `export default ComponentName` so the hydration runtime can import
           // the component directly without the server-only island() wrapper.
@@ -177,6 +196,40 @@ function detectLoader(path: string): "tsx" | "ts" | "jsx" | "js" {
   return "js";
 }
 
+/** Preprocess island TSX with Solid's compiler (SSR on server, DOM in browser bundles). */
+async function transformIslandWithSolid(
+  source: string,
+  path: string,
+  mode: "server" | "browser",
+): Promise<string> {
+  // Resolve from the running app's `node_modules` (process.cwd()), not anpan's package root.
+  const req = createRequire(join(process.cwd(), "package.json"));
+  const babel = await import(req.resolve("@babel/core"));
+  const tsPreset = (await import(req.resolve("@babel/preset-typescript"))).default;
+  const solidMod = await import(req.resolve("babel-preset-solid"));
+  const solidPreset = (solidMod as { default?: unknown }).default ?? solidMod;
+  const generate = mode === "server" ? "ssr" : "dom";
+  const isTsx = path.endsWith(".tsx");
+  const result = await babel.transformAsync(source, {
+    filename: path,
+    presets: [
+      [
+        tsPreset,
+        isTsx
+          ? { allExtensions: true, isTSX: true }
+          : { allExtensions: true, isTSX: false },
+      ],
+      [solidPreset, { generate, hydratable: true }],
+    ],
+  });
+  if (!result?.code) {
+    throw new Error(
+      "babel-preset-solid produced no output (install @babel/core, @babel/preset-typescript, babel-preset-solid)",
+    );
+  }
+  return result.code;
+}
+
 /**
  * Extract the default export component name from source.
  * Also normalises anonymous arrow/expression defaults to a named const.
@@ -196,8 +249,8 @@ function extractAndNormalizeDefaultExport(source: string): {
     return { name: funcMatch[1]!, transformed: source };
   }
 
-  // Pattern 2: export default Identifier; (last occurrence)
-  const idMatch = source.match(/\nexport\s+default\s+(\w+)\s*;?\s*$/);
+  // Pattern 2: export default Identifier; (babel-preset-solid may emit more code after this line, e.g. delegateEvents)
+  const idMatch = source.match(/\nexport\s+default\s+(\w+)\s*;?\s*$/m);
   if (idMatch) {
     return { name: idMatch[1]!, transformed: source };
   }
@@ -212,6 +265,14 @@ function extractAndNormalizeDefaultExport(source: string): {
       name: "__islandDefault__",
       transformed: transformed + "\nexport default __islandDefault__;",
     };
+  }
+
+  // Pattern 4: export { Name as default }; (e.g. babel-preset-solid multi-line emit)
+  const reExportDefaultMatch = source.match(
+    /\bexport\s*\{\s*(\w+)\s+as\s+default\s*\}\s*;?/,
+  );
+  if (reExportDefaultMatch) {
+    return { name: reExportDefaultMatch[1]!, transformed: source };
   }
 
   return { name: null, transformed: source };

@@ -445,10 +445,17 @@ createServer({
     serverRender: (comp, props) => renderToString(() => (comp as any)(props)),
     clientMountSnippet:
       `import{render as __sr__}from"solid-js/web";` +
-      `export const __islandMount=(el,props)=>__sr__(()=>__COMP__(props),el);`,
+      `export const __islandMount=(el,props)=>{` +
+      `while(el.firstChild)el.removeChild(el.firstChild);` +
+      `__sr__(()=>__COMP__(props),el);el.dataset.mounted="1";};`,
+    solidIslandTransform: true,
   },
 });
 ```
+
+When `jsxImportSource` is still `@travvy/anpan` for pages, set `solidIslandTransform: true` so `.island.tsx` files are compiled with `babel-preset-solid` before the island plugin (SSR + browser bundles). Add devDependencies: `@babel/core`, `@babel/preset-typescript`, and `babel-preset-solid`.
+
+When `clientMountSnippet` is non-empty, the island bundler disables code splitting and tree-shaking for that build so the appended `export const __islandMount` is not dropped (only the runtime’s dynamic `import()` references it). That keeps named exports alongside the default export in the bundle, as in the Solid example above.
 
 The `clientMountSnippet` is appended to each island bundle. `__COMP__` is replaced with the actual component identifier. It must export a named function `__islandMount(el, props)` that mounts the component into `el`.
 
@@ -464,7 +471,7 @@ The `clientMountSnippet` is appended to each island bundle. `__COMP__` is replac
 <Counter onChange={() => doSomething()} />
 ```
 
-**Only `useState` is available.** The client runtime provides `useState` and nothing else. There is no `useEffect`, `useRef`, `useContext`, or reducer. For "run on mount" behaviour, use a self-initialising pattern or access DOM APIs directly:
+**Built-in runtime: only `useState`.** When you are **not** using a custom `jsxFramework` adapter (React, Preact, Solid, etc.), the client runtime is anpan’s mini reconciler: it provides `useState` and nothing else. There is no `useEffect`, `useRef`, `useContext`, or reducer. If you use React, Preact, or Solid for islands via an adapter, use that framework’s APIs instead. For "run on mount" behaviour with the built-in runtime, use a self-initialising pattern or access DOM APIs directly:
 
 ```tsx
 export default function Map({ lat, lng }: { lat: number; lng: number }) {
@@ -480,7 +487,7 @@ export default function Map({ lat, lng }: { lat: number; lng: number }) {
 }
 ```
 
-Note: `ref` callbacks are not supported by the runtime. For DOM access, use `document.querySelector` inside an event handler or a small `<script>` tag in the layout.
+Note: the built-in runtime does not support `ref` callbacks. For DOM access, use `document.querySelector` inside an event handler or a small `<script>` tag in the layout (framework adapters may support refs per that framework).
 
 **Islands are isolated.** Each island manages its own state. There is no built-in mechanism for two islands on the same page to share state. Use a module-level variable, `localStorage`, a URL parameter, or a custom event (`dispatchEvent` / `addEventListener`) to communicate between islands.
 
@@ -832,6 +839,11 @@ interface JsxFrameworkAdapter {
    * Use __COMP__ as a placeholder for the component identifier.
    */
   clientMountSnippet: string;
+  /**
+   * When true, preprocess `.island.tsx` / `.island.jsx` with babel-preset-solid before the island plugin
+   * (pages can keep `jsxImportSource: "@travvy/anpan"`). Requires `@babel/core`, `@babel/preset-typescript`, `babel-preset-solid`.
+   */
+  solidIslandTransform?: boolean;
 }
 ```
 
@@ -839,7 +851,7 @@ React and Preact adapters are built-in and selected automatically from `jsxImpor
 
 ### `useState(initialValue)`
 
-Minimal state hook for island components. On the server returns `[initialValue, noop]`. In the browser manages local state and triggers re-renders. When using React or Preact islands, use those frameworks' own `useState` instead.
+Minimal state hook for island components. On the server returns `[initialValue, noop]`. In the browser manages local state and triggers re-renders. When using React, Preact, or Solid islands via a `jsxFramework` adapter, use that framework’s state APIs instead.
 
 ### Types
 
@@ -875,6 +887,7 @@ type LoaderReturn<TData = unknown> =
 interface JsxFrameworkAdapter {
   serverRender: (component: unknown, props: Record<string, unknown>) => string;
   clientMountSnippet: string;
+  solidIslandTransform?: boolean;
 }
 
 // API route handler

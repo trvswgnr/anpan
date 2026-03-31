@@ -30,6 +30,7 @@
     "typecheck": "./scripts/typecheck.sh"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
     "@types/bun": "latest",
     "playwright": "1.56.1"
   },
