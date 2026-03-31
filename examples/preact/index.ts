@@ -8,7 +8,7 @@
  * Run:
  *   cd examples/preact && bun install && bun run dev
  */
-import { createServer } from "../../src/index.ts";
+import { createServer } from "@travvy/anpan";
 
 const server = await createServer({
   pagesDir: "./pages",

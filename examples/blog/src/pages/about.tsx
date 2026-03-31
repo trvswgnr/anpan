@@ -1,4 +1,4 @@
-import { Head } from "anpan";
+import { Head } from "@travvy/anpan";
 
 export default function AboutPage() {
   return (

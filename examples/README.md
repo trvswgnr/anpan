@@ -6,31 +6,31 @@ Sample apps for trying anpan from a **clone of this repo**. They are useful for 
 
 Same as the main project: [Bun](https://bun.sh) >= 1.1.0.
 
-## How these examples resolve `anpan`
+## How these examples depend on the framework
 
-Each example's `tsconfig.json` maps the `anpan` package to `../../src/...` (see [examples/dev/tsconfig.json](dev/tsconfig.json)). Entry files such as [`dev/main.ts`](dev/main.ts) import from `"anpan"` or from `../../src/index.ts` so you do **not** need `bun link` or a published package to run them.
+Each example is a Bun package with `"@travvy/anpan": "../.."` in its [package.json](dev/package.json) (same idea as [examples/dev](dev/)). Imports use the scoped package name (`@travvy/anpan`, `@travvy/anpan/islands`) so module resolution matches a published install. After `bun install` in that folder, `node_modules/@travvy/anpan` points at the repo root. Entry files are `index.ts`; `bun run dev` runs the dev script (typically `bun run --hot index.ts`).
 
 ## Working directory matters
 
-`createServer` / `createDevServer` options like `pagesDir` and `publicDir` are **relative to the process current working directory**, not to the entry file. Always start the server from **inside** the example directory, or use the repo-root npm scripts listed below (they `cd` into the right folder first).
+`createServer` / `createDevServer` options like `pagesDir` and `publicDir` are **relative to the process current working directory**, not to the entry file. Always start the server from **inside** the example directory, or use the repo helper script below (it `cd`s into the right folder first).
 
 ## From the repository root
 
 After `bun install` at the repo root (for tests and tooling):
 
-| Script | Example |
-|--------|---------|
-| `bun dev` | [`dev`](dev/) - dev server with hot reload |
-| `bun run example:blog` | [`blog`](blog/) |
-| `bun run example:react` | [`react`](react/) |
-| `bun run example:preact` | [`preact`](preact/) |
-| `bun run example:solidjs` | [`solidjs`](solidjs/) |
+```sh
+./scripts/run-example.sh dev
+./scripts/run-example.sh blog
+./scripts/run-example.sh react
+./scripts/run-example.sh preact
+./scripts/run-example.sh solidjs
+```
 
 ## From inside an example
 
 ```sh
 cd examples/<name>
-bun install   # only needed for react, preact, and solidjs (extra dependencies)
+bun install
 bun run dev
 ```
 
@@ -38,13 +38,13 @@ bun run dev
 
 Default ports are chosen so you can run several examples at once on one machine:
 
-| Example | Highlights | Default port | Extra `bun install`? |
-|---------|------------|--------------|----------------------|
-| `dev` | `createDevServer`, middleware, `src/pages` layout, API route | 3000 | No |
-| `blog` | `createServer`, richer content | 3001 | No |
+| Example | Highlights | Default port | `bun install` in folder? |
+|---------|------------|--------------|--------------------------|
+| `dev` | `createDevServer`, middleware, `src/pages` layout, API route | 3000 | Yes |
+| `blog` | `createServer`, richer content | 3001 | Yes |
 | `react` | React islands (`jsxImportSource: "react"`) | 3002 | Yes |
 | `preact` | Preact islands | 3003 | Yes |
-| `solidjs` | Custom `jsxFramework` adapter (see [`solidjs/main.ts`](solidjs/main.ts)) | 3004 | Yes |
+| `solidjs` | Custom `jsxFramework` adapter (see [`solidjs/index.ts`](solidjs/index.ts)) | 3004 | Yes |
 
 Every example reads `process.env.PORT` when set, so you can override defaults, e.g. `PORT=4000 bun run dev`.
 

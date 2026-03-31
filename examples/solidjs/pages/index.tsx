@@ -1,4 +1,4 @@
-import type { PageProps } from "../../../src/index.ts";
+import type { PageProps } from "@travvy/anpan";
 import Counter from "../components/Counter.island.tsx";
 
 export default function HomePage(_props: PageProps) {
@@ -7,7 +7,7 @@ export default function HomePage(_props: PageProps) {
       <h1>SolidJS Islands Example</h1>
       <p>
         This page uses <strong>SolidJS</strong> for island components via a
-        custom <code>jsxFramework</code> adapter in <code>main.ts</code>. Unlike
+        custom <code>jsxFramework</code> adapter in <code>index.ts</code>. Unlike
         React and Preact, SolidJS is not auto-detected - the adapter must be
         provided explicitly.
       </p>

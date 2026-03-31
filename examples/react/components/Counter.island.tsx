@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { island } from "../../../src/islands/index.ts";
+import { island } from "@travvy/anpan/islands";
 
 interface CounterProps {
   initial?: number;

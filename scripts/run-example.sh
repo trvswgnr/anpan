@@ -3,6 +3,8 @@
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(dirname "$script_dir")"
 
+source "$project_root/scripts/setup.sh"
+
 example="$1"
 
 if [ -z "$example" ]; then
@@ -11,14 +13,11 @@ if [ -z "$example" ]; then
     exit 1
 fi
 
-if [ ! -d "$project_root/examples/$example" ]; then
-    echo "example $example does not exist"
+example_dir="$project_root/examples/$example"
+
+if [ ! -d "$example_dir" ]; then
+    echo "example \"$example\" does not exist"
     exit 1
 fi
 
-cd "$project_root/examples/$example" || {
-    echo "failed to cd to examples/$example"
-    exit 1
-}
-
-bun dev
+run_in_dir "$example_dir" "bun run dev"

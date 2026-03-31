@@ -1,5 +1,5 @@
-import { Head } from "anpan";
-import type { PageProps } from "anpan";
+import { Head } from "@travvy/anpan";
+import type { PageProps } from "@travvy/anpan";
 import { posts, getPostsByTag } from "../../data/posts";
 
 export default function BlogIndexPage({ url }: PageProps) {

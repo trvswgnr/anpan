@@ -1,4 +1,4 @@
-import type { PageProps } from "../../../src/index.ts";
+import type { PageProps } from "@travvy/anpan";
 import Counter from "../components/Counter.island.tsx";
 
 export default function HomePage(_props: PageProps) {

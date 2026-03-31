@@ -7,9 +7,6 @@
   "scripts": {
     "dev": "bun run --hot index.ts"
   },
-  "dependencies": {
-    "@travvy/anpan": "../.."
-  },
   "devDependencies": {
     "@types/bun": "latest"
   },

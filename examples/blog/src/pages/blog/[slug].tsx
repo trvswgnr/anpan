@@ -1,6 +1,6 @@
-import { Head, notFound, cacheFor } from "anpan";
-import type { PageProps, Loader } from "anpan";
-import type { RouteContext } from "anpan";
+import { Head, notFound, cacheFor } from "@travvy/anpan";
+import type { PageProps, Loader } from "@travvy/anpan";
+import type { RouteContext } from "@travvy/anpan";
 import { getPost, likes, type Post } from "../../data/posts";
 import LikeButton from "../../components/LikeButton.island";
 

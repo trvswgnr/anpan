@@ -25,7 +25,7 @@ interface ServerHandle {
 /** Install npm/bun dependencies in the given directory (fast no-op if up to date). */
 function installDeps(dir: string): void {
   // If node_modules already contains packages, skip the install to avoid
-  // potential hangs on local file-path dependencies (e.g. anpan: "../../").
+  // potential hangs on local file-path dependencies (e.g. @travvy/anpan: "../..").
   try {
     const entries = Array.from(
       new Bun.Glob("*").scanSync({ cwd: dir + "/node_modules", onlyFiles: false }),
@@ -62,7 +62,7 @@ async function getFreePort(): Promise<number> {
  * Returns a handle that can be used to make requests and shut down the server.
  */
 async function startExample(dir: string, port: number): Promise<ServerHandle> {
-  const proc = Bun.spawn(["bun", "run", "main.ts"], {
+  const proc = Bun.spawn(["bun", "dev"], {
     cwd: dir,
     env: { ...process.env, PORT: String(port) },
     stdout: "pipe",

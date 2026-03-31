@@ -98,8 +98,11 @@ export async function createServer(config: ServerConfig = {}): Promise<ReturnTyp
   Bun.plugin({
     name: "anpan:jsx-runtime-resolve",
     setup(build) {
-      build.onResolve({ filter: /^anpan\/jsx-runtime$/ }, () => ({ path: jsxRuntimePath }));
-      build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({ path: jsxDevRuntimePath }));
+      const resolveJsx = (target: string) => () => ({ path: target });
+      build.onResolve({ filter: /^anpan\/jsx-runtime$/ }, resolveJsx(jsxRuntimePath));
+      build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, resolveJsx(jsxDevRuntimePath));
+      build.onResolve({ filter: /^@travvy\/anpan\/jsx-runtime$/ }, resolveJsx(jsxRuntimePath));
+      build.onResolve({ filter: /^@travvy\/anpan\/jsx-dev-runtime$/ }, resolveJsx(jsxDevRuntimePath));
     },
   });
 

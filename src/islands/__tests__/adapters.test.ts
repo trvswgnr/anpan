@@ -37,7 +37,7 @@ describe("detectJsxFramework", () => {
     expect(await detectJsxFramework(join(FIXTURES, "solidjs"))).toBeNull();
   });
 
-  test('returns null for jsxImportSource: "anpan" (built-in)', async () => {
+  test('returns null for jsxImportSource: "@travvy/anpan" (built-in)', async () => {
     expect(await detectJsxFramework(join(FIXTURES, "default"))).toBeNull();
   });
 

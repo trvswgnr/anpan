@@ -1,15 +1,20 @@
 {
-  "name": "example-solidjs",
+  "name": "solidjs example",
   "private": true,
+  "description": "example of anpan using the local package",
   "type": "module",
+  "module": "index.ts",
   "scripts": {
-    "dev": "bun run --hot main.ts",
-    "start": "NODE_ENV=production bun run main.ts"
+    "dev": "bun run --hot index.ts",
+    "start": "NODE_ENV=production bun run index.ts"
   },
   "dependencies": {
     "solid-js": "^1.9.0"
   },
-  "notes": {
-    "jsxTransform": "SolidJS requires a JSX transform plugin. Install and configure 'bun-plugin-solid' or use Vite with 'vite-plugin-solid'. Without the transform, JSX compiles to standard createElement calls instead of SolidJS reactive primitives."
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

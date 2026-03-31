@@ -1,4 +1,4 @@
-import { useState } from "anpan/islands";
+import { useState } from "@travvy/anpan/islands";
 
 interface Props {
   slug: string;

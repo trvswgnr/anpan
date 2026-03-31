@@ -8,11 +8,9 @@ const logger: Middleware = async (req, next) => {
   return res;
 };
 
-const server = await createDevServer({
+const _server = await createDevServer({
   pagesDir: "./src/pages",
   publicDir: "./public",
   middleware: [logger],
   port: parseInt(process.env.PORT ?? "3000"),
 });
-
-console.log(`Running at ${server.url}`);

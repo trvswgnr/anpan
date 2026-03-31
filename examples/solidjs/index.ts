@@ -2,7 +2,7 @@
  * SolidJS example for anpan.
  *
  * This example demonstrates using solid-js alongside anpan. Pages are
- * rendered with anpan's JSX runtime (jsxImportSource: "anpan" in tsconfig),
+ * rendered with anpan's JSX runtime (jsxImportSource: "@travvy/anpan" in tsconfig),
  * and island components use anpan's built-in useState for client reactivity.
  *
  * solid-js is available as a dependency and can be used for its non-JSX APIs
@@ -15,9 +15,11 @@
  * Run:
  *   cd examples/solidjs && bun run dev
  */
-import { renderToString } from "../../src/jsx/runtime.ts";
-import { createServer } from "../../src/index.ts";
-import type { JsxFrameworkAdapter } from "../../src/islands/bundler.ts";
+import {
+  createServer,
+  renderToString,
+  type JsxFrameworkAdapter,
+} from "@travvy/anpan";
 
 const solidAdapter: JsxFrameworkAdapter = {
   /**
@@ -25,7 +27,9 @@ const solidAdapter: JsxFrameworkAdapter = {
    * anpan's renderToString (since islands use anpan's JSX runtime).
    */
   serverRender: (comp, props) =>
-    renderToString((comp as (p: unknown) => unknown)(props)),
+    renderToString(
+      (comp as (p: Record<string, unknown>) => unknown)(props),
+    ),
 
   /**
    * Client-side: empty snippet - let anpan's built-in island reconciler

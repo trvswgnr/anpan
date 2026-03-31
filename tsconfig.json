@@ -1,5 +1,23 @@
 {
-  "extends": "./tsconfig.base.json",
-  "include": ["src/**/*"],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@travvy/anpan",
+    "baseUrl": ".",
+    "paths": {
+      "@travvy/anpan": ["./src/index.ts"],
+      "@travvy/anpan/islands": ["./src/islands/index.ts"],
+      "@travvy/anpan/jsx-runtime": ["./src/jsx/jsx-runtime.ts"],
+      "@travvy/anpan/jsx-dev-runtime": ["./src/jsx/jsx-dev-runtime.ts"]
+    }
+  },
+  "include": ["src/**/*", "examples/__tests__/**/*"],
   "exclude": ["node_modules", ".anpan", "dist"]
 }

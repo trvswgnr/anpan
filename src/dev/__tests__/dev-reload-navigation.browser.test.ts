@@ -7,7 +7,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll, setDefaultTimeout } from "bun:test";
-import { chromium, type Browser } from "playwright";
+import type { Browser } from "playwright";
 import { join } from "node:path";
 import {
   BROWSER_TESTS_ENABLED,
@@ -37,7 +37,8 @@ describe.skipIf(!BROWSER_TESTS_ENABLED)("Playwright dev reload navigation (MPA)"
   beforeAll(async () => {
     ensurePlaywrightChromium();
 
-    const { createServer } = await import("anpan");
+    const { chromium } = await import("playwright");
+    const { createServer } = await import("@travvy/anpan");
 
     server = await createServer({
       pagesDir: DEV_PAGES,

@@ -4,9 +4,9 @@
  * Run:
  *   cd examples/blog && bun run dev
  * Or from repo root:
- *   bun run example:blog
+ *   ./scripts/run-example.sh blog
  */
-import { createServer } from "../../src/index.ts";
+import { createServer } from "@travvy/anpan";
 
 const server = await createServer({
   pagesDir: "./src/pages",

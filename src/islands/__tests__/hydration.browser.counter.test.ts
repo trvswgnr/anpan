@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll, setDefaultTimeout } from "bun:test";
-import { chromium, type Browser, type Page } from "playwright";
+import type { Browser, Page } from "playwright";
 import { join } from "node:path";
 import {
   BROWSER_TESTS_ENABLED,
@@ -23,7 +23,7 @@ async function startCounterExample(dir: string): Promise<ExampleHandle> {
   const port = srv.port;
   srv.stop(true);
 
-  const proc = Bun.spawn(["bun", "run", "main.ts"], {
+  const proc = Bun.spawn(["bun", "run", "index.ts"], {
     cwd: dir,
     env: { ...process.env, PORT: String(port) },
     stdout: "pipe",
@@ -69,6 +69,7 @@ function counterPage(): Promise<Page> {
 describe.skipIf(!BROWSER_TESTS_ENABLED)("Playwright hydration (counter examples)", () => {
   beforeAll(async () => {
     ensurePlaywrightChromium();
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({ headless: true });
   }, 30_000);
 

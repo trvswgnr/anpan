@@ -1,4 +1,4 @@
-import { useState } from "anpan/islands";
+import { useState } from "@travvy/anpan/islands";
 
 export default function ThemeToggle(_props: Record<string, never>) {
   const [dark, setDark] = useState(false);

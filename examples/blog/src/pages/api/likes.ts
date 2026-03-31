@@ -1,4 +1,4 @@
-import type { ApiHandler } from "anpan";
+import type { ApiHandler } from "@travvy/anpan";
 import { likes, getPost } from "../../data/posts";
 
 // GET /api/likes?slug=post-id — query param matches flat /api/likes route (no dynamic segment).

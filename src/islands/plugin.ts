@@ -14,7 +14,7 @@ import { getBuiltinFramework } from "./builtin-adapters.ts";
 //
 //   The plugin rewrites this to:
 //     function Counter({ initial = 0 }) { ... }
-//     import { island as __i__ } from "anpan/islands";
+//     import { island as __i__ } from "@travvy/anpan/islands";
 //     export default __i__(Counter, "/abs/path/to/Counter.island.tsx");
 //
 //   For React/Preact (built-in adapters), the render option is also injected:
@@ -26,7 +26,7 @@ import { getBuiltinFramework } from "./builtin-adapters.ts";
 //   global _serverAdapter set via setServerAdapter() at startup.
 //
 // Browser mode (passed to Bun.build() plugins):
-//   Rewrites "anpan/islands" imports to point directly at
+//   Rewrites "@travvy/anpan/islands" (and legacy "anpan/islands") imports to point directly at
 //   client-runtime.ts so that:
 //     a) useState is the reactive browser version (not the server noop)
 //     b) the node:crypto / node:async_hooks server code is never bundled
@@ -43,7 +43,13 @@ export interface IslandPluginOptions {
 const CLIENT_RUNTIME = join(import.meta.dir, "client-runtime.ts");
 const JSX_RUNTIME = join(import.meta.dir, "../jsx/jsx-runtime.ts");
 const JSX_DEV_RUNTIME = join(import.meta.dir, "../jsx/jsx-dev-runtime.ts");
-const ISLANDS_IMPORT_RE = /from\s+["']anpan\/islands["']/g;
+
+/** Subpath for island runtime; must match package.json `exports["./islands"]`. */
+const ISLANDS_PACKAGE_IMPORT = "@travvy/anpan/islands";
+
+/** User + generated imports from either scoped package or legacy `anpan/islands` path alias. */
+const ISLANDS_IMPORT_RE =
+  /from\s+["'](?:@travvy\/)?anpan\/islands["']/g;
 
 export function createIslandPlugin(
   mode: "server" | "browser" = "server",
@@ -63,6 +69,12 @@ export function createIslandPlugin(
         build.onResolve({ filter: /^anpan\/jsx-dev-runtime$/ }, () => ({
           path: JSX_DEV_RUNTIME,
         }));
+        build.onResolve({ filter: /^@travvy\/anpan\/jsx-runtime$/ }, () => ({
+          path: JSX_RUNTIME,
+        }));
+        build.onResolve({ filter: /^@travvy\/anpan\/jsx-dev-runtime$/ }, () => ({
+          path: JSX_DEV_RUNTIME,
+        }));
 
         // Redirect any direct import of the server-side islands module
         // (e.g. "../../../src/islands/index.ts") to the browser-safe
@@ -76,9 +88,8 @@ export function createIslandPlugin(
             return { path: CLIENT_RUNTIME };
           }
         });
-        // Also catch the package import form "anpan/islands" that the string
-        // replacement might miss in edge cases.
-        build.onResolve({ filter: /^anpan\/islands$/ }, () => ({
+        // Also catch package imports the string replacement might miss.
+        build.onResolve({ filter: /^(?:@travvy\/)?anpan\/islands$/ }, () => ({
           path: CLIENT_RUNTIME,
         }));
       }
@@ -219,7 +230,7 @@ function autoWrap(source: string, filePath: string): string {
       "$1",
     );
     return (
-      `import{island as __i__}from"anpan/islands";\n` +
+      `import{island as __i__}from"${ISLANDS_PACKAGE_IMPORT}";\n` +
       modified +
       `\nexport default __i__(${name},${escaped});`
     );
@@ -232,7 +243,7 @@ function autoWrap(source: string, filePath: string): string {
     const name = defaultIdMatch[1]!;
     const modified = source.replace(/\nexport\s+default\s+\w+\s*;?\s*$/, "");
     return (
-      `import{island as __i__}from"anpan/islands";\n` +
+      `import{island as __i__}from"${ISLANDS_PACKAGE_IMPORT}";\n` +
       modified +
       `\nexport default __i__(${name},${escaped});`
     );
@@ -246,7 +257,7 @@ function autoWrap(source: string, filePath: string): string {
   if (defaultExprMatch) {
     const modified = source.replace(/export\s+default\s+/, "const __comp__ = ");
     return (
-      `import{island as __i__}from"anpan/islands";\n` +
+      `import{island as __i__}from"${ISLANDS_PACKAGE_IMPORT}";\n` +
       modified +
       `\nexport default __i__(__comp__,${escaped});`
     );
@@ -262,12 +273,12 @@ function autoWrap(source: string, filePath: string): string {
  * snapshot uses the correct renderToString.
  *
  * Input (from autoWrap):
- *   import{island as __i__}from"anpan/islands";
+ *   import{island as __i__}from"@travvy/anpan/islands";
  *   function Counter(...) { ... }
  *   export default __i__(Counter,"/path/Counter.island.tsx");
  *
  * Output (React):
- *   import{island as __i__}from"anpan/islands";
+ *   import{island as __i__}from"@travvy/anpan/islands";
  *   import{createElement as __ce__}from"react";
  *   import{renderToString as __rts__}from"react-dom/server";
  *   function Counter(...) { ... }
@@ -307,9 +318,9 @@ function injectServerRender(
   const newCall = `export default __i__(${name},${escaped},{render:(p)=>${renderExpr}});`;
   const rewritten = wrapped.replace(callRe, newCall);
 
-  // Insert framework imports after the anpan/islands import
+  // Insert framework imports after the islands package import
   return rewritten.replace(
-    /^(import\{island as __i__\}from"anpan\/islands";\n)/,
+    /^(import\{island as __i__\}from"@travvy\/anpan\/islands";\n)/,
     `$1${imports}`,
   );
 }

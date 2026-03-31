@@ -1,5 +1,4 @@
-import { useState } from "anpan/islands";
-import { island } from "../../../src/islands/index.ts";
+import { island, useState } from "@travvy/anpan/islands";
 
 interface CounterProps {
   initial?: number;

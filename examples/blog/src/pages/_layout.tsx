@@ -1,4 +1,4 @@
-import type { LayoutProps } from "anpan";
+import type { LayoutProps } from "@travvy/anpan";
 import ThemeToggle from "../components/ThemeToggle.island";
 
 export default function RootLayout({ children, url }: LayoutProps) {
