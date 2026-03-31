@@ -21,4 +21,4 @@ cd "$project_root/examples/$example" || {
     exit 1
 }
 
-bun run --hot main.ts
+bun dev

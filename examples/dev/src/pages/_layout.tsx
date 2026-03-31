@@ -1,4 +1,4 @@
-import type { LayoutProps } from "anpan";
+import type { LayoutProps } from "@travvy/anpan";
 
 export default function RootLayout({ children }: LayoutProps) {
   return (

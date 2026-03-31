@@ -1,5 +1,5 @@
-import { Head } from "anpan";
-import type { PageProps } from "anpan";
+import { Head } from "@travvy/anpan";
+import type { PageProps } from "@travvy/anpan";
 
 export default function BlogPost({ params }: PageProps) {
   const { slug } = params;

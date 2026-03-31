@@ -1,4 +1,4 @@
-import { Head } from "anpan";
+import { Head } from "@travvy/anpan";
 import type { PageProps } from "../../../../src/index.ts";
 
 export default function HomePage(_props: PageProps) {

@@ -1,5 +1,5 @@
-import { createDevServer } from "anpan";
-import type { Middleware } from "anpan";
+import { createDevServer } from "@travvy/anpan";
+import type { Middleware } from "@travvy/anpan";
 
 const logger: Middleware = async (req, next) => {
   const start = Date.now();
